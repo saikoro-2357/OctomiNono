@@ -7,7 +7,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;500;700&display=swap" rel="stylesheet">
 
     <style>
         /* 全要素のボックスサイズ計算を統一 */
@@ -196,11 +196,9 @@
             transform: none;
             box-shadow: none;
         }
-        
-        /* ★修正: 召喚ボタンのバッジ位置調整 */
         .stock-badge {
             position: absolute;
-            top: -10px; /* 少し上に */
+            top: -5px;
             right: -5px;
             left: auto;
             background: #263238;
@@ -215,7 +213,6 @@
             font-size: 12px;
             font-weight: 700;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            padding-bottom: 1px; /* 数字の重心を微調整 */
         }
 
         #zukan-btn {
@@ -247,6 +244,8 @@
             z-index: 100;
             white-space: nowrap;
             letter-spacing: 0.05em;
+            
+            /* サイズ統一 */
             min-width: 500px;
             text-align: center;
         }
@@ -297,18 +296,17 @@
             margin: 0;
         }
         
-        /* ★修正: タブを左詰め、固定幅に */
+        /* タブエリア (Gridで均等配置) */
         .zukan-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr); /* 7つのタブ */
+            gap: 2px;
             margin-bottom: 0; 
             padding-left: 0;
             position: relative;
             top: 1px; 
             z-index: 5;
             width: 100%;
-            justify-content: flex-start;
         }
         .tab-btn {
             background: #37474F;
@@ -324,8 +322,9 @@
             transition: all 0.2s;
             position: relative;
             text-align: center;
-            width: 100px; /* 固定幅 */
-            flex: 0 0 auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .tab-btn:hover { background: #455A64; color: #fff; }
         .tab-btn.active {
@@ -340,6 +339,7 @@
             padding-top: 12px;
         }
 
+        /* 閉じるボタン */
         .modal-close-btn {
             background: #E53935;
             border: none;
@@ -640,7 +640,7 @@
         
         <h3 style="border-bottom: 1px solid #546E7A; padding-bottom: 5px; margin-bottom: 10px;">基本操作</h3>
         <ul style="line-height: 2.2; padding-left: 20px; font-weight: 300;">
-            <li>空白をダブルクリック : <span style="color:#00ACC1; font-weight:500;">ミノ生成 (4個)</span></li>
+            <li>空白をダブルクリック : <span style="color:#00ACC1; font-weight:500;">ミノ生成 (3個)</span></li>
             <li>左ドラッグ : <span style="color:#00ACC1; font-weight:500;">ミノの移動</span></li>
             <li>マウスホイール : <span style="color:#00ACC1; font-weight:500;">ミノの回転</span></li>
             <li>塊を右クリック : <span style="color:#FF4081; font-weight:500;">報告(登録) & 回収</span></li>
@@ -786,6 +786,7 @@ class SoundSystem {
     // ★変更: 新規登録音 (ピッ！ 高音)
     playNewDiscovery() {
         if (!this.enabled) return;
+        // 短く高い音
         this.playTone('sine', 2000, 4000, 0.1, 0.1); 
     }
     // 既出 (低い)
@@ -1132,7 +1133,7 @@ class Zukan {
         }
         let ids = currentShapes.map(s => normalizeShape(s));
         
-        // カテゴリ判定とソート
+        // ★修正: カテゴリ判定とソート (パターンA-F)
         ids.sort((a, b) => {
             const getCat = (id) => {
                 const s = getShortSideLength(id);
@@ -1167,7 +1168,7 @@ class Zukan {
         const itemW = 160; 
         const itemH = 120; 
 
-        // フィルタリングロジック
+        // ★修正: フィルタリングロジック (Pattern A-F)
         const visibleIds = this.allIds.filter(id => {
             const s = getShortSideLength(id);
             const l = getLongSideLength(id);
@@ -1595,6 +1596,8 @@ class Game {
         this.sound = new SoundSystem(); 
 
         this.tetrominoBag = [];
+        this.smallBlockBag = []; 
+
         this.monominoStock = 0;
         this.maxMonominoStock = 8;
 
@@ -1735,6 +1738,7 @@ class Game {
         const gridX = Math.floor(cx / GRID_SIZE);
         const gridY = Math.floor(cy / GRID_SIZE);
 
+        // テトロミノバッグ
         if (this.tetrominoBag.length === 0) {
             this.tetrominoBag = [4, 5, 6, 7, 8, 9, 10];
             for (let i = this.tetrominoBag.length - 1; i > 0; i--) {
@@ -1744,12 +1748,18 @@ class Game {
         }
         const nextTetrominoId = this.tetrominoBag.pop();
 
-        const typesToSpawn = [
-            1, // Domino
-            2, // Tromino I
-            3, // Tromino L
-            nextTetrominoId
-        ];
+        // ★修正: スモールミノ (1, 2, 3) からランダムに2種（被りなし）
+        const smallCandidates = [1, 2, 3];
+        // シャッフル
+        for (let i = smallCandidates.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [smallCandidates[i], smallCandidates[j]] = [smallCandidates[j], smallCandidates[i]];
+        }
+        const small1 = smallCandidates[0];
+        const small2 = smallCandidates[1];
+
+        // 3個生成
+        const typesToSpawn = [small1, small2, nextTetrominoId];
         typesToSpawn.sort(() => Math.random() - 0.5);
 
         const offsets = [];
@@ -1947,6 +1957,7 @@ class Game {
         this.checkClusters(); 
     }
 
+    // ★修正: トーストアニメーションのちらつき修正
     showToast(msg, isNew) {
         const toast = document.getElementById('toast');
         if (this.toastTimer) clearTimeout(this.toastTimer);
