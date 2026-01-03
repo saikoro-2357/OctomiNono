@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生成形オクトミノ</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* 全要素のボックスサイズ計算を統一 */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #102027;
+            font-family: 'Noto Sans JP', sans-serif;
+            font-weight: 300;
+            user-select: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* UIレイヤー */
+        #ui-layer {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        /* --- 左上 ハンバーガーメニュー --- */
+        #hamburger-btn {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            width: 50px;
+            height: 50px;
+            background: rgba(33, 33, 33, 0.6);
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            transition: background 0.2s;
+        }
+        #hamburger-btn:hover { background: rgba(55, 71, 79, 0.8); }
+
+        /* サイドメニュー本体 */
+        #side-menu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 320px;
+            background: rgba(16, 32, 39, 0.98);
+            border-right: 1px solid #455a64;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 90;
+            padding: 90px 40px 40px 40px; 
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+        }
+        #side-menu.active {
+            transform: translateX(0);
+        }
+
+        /* メニュー内タイトル */
+        #menu-title {
+            font-size: 24px;
+            font-weight: 300;
+            color: #ffffff;
+            margin: 0 0 10px 0;
+            border-bottom: 1px solid #00ACC1;
+            padding-bottom: 15px;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        /* メニューボタン共通 */
+        .menu-item-btn {
+            background: transparent;
+            color: #eceff1;
+            border: 1px solid #546E7A;
+            padding: 12px 15px;
+            text-align: left;
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 16px;
+            font-weight: 300;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .menu-item-btn:hover {
+            background: rgba(0, 172, 193, 0.15);
+            border-color: #00ACC1;
+            padding-left: 20px;
+        }
+        .menu-item-btn span { font-size: 18px; width: 24px; text-align: center; }
+
+        /* --- 右上 時計 --- */
+        #clock-display {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 64px;
+            font-weight: 500;
+            font-family: 'Noto Sans JP', sans-serif;
+            letter-spacing: 0.02em;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: none;
+            line-height: 1;
+        }
+
+        /* --- 右下 アクションボタン群 --- */
+        #bottom-right-actions {
+            position: absolute;
+            bottom: 25px;
+            right: 25px;
+            display: flex;
+            flex-direction: column-reverse; 
+            gap: 15px;
+            align-items: flex-end;
+            pointer-events: none; 
+            z-index: 20;
+        }
+
+        /* 丸いアイコンボタン共通スタイル */
+        .action-circle-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-family: 'Noto Sans JP', sans-serif;
+            font-weight: 500;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            transition: transform 0.1s, background 0.2s;
+            position: relative;
+        }
+        .action-circle-btn:active { transform: scale(0.95); }
+        .action-circle-btn:hover { transform: scale(1.05); }
+
+        /* 個別ボタンスタイル */
+        #clear-all-btn {
+            background: #D32F2F;
+            font-size: 11px;
+        }
+        #clear-all-btn span { font-size: 20px; margin-bottom: 2px; }
+        #clear-all-btn:hover { background: #F44336; }
+
+        #monomino-btn {
+            background: #FFB300;
+            color: #263238;
+            font-size: 11px;
+        }
+        /* 四角いアイコン */
+        #monomino-btn span.icon { font-size: 16px; margin-bottom: 4px; }
+        #monomino-btn:hover:not(:disabled) { background: #FFCA28; }
+        #monomino-btn:disabled {
+            background: #546E7A;
+            color: #90A4AE;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* ★修正: 召喚ボタンのバッジ位置調整 */
+        .stock-badge {
+            position: absolute;
+            top: -10px; /* 少し上に */
+            right: -5px;
+            left: auto;
+            background: #263238;
+            color: #fff;
+            border: 2px solid #FFB300;
+            border-radius: 50%;
+            min-width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            padding-bottom: 1px; /* 数字の重心を微調整 */
+        }
+
+        #zukan-btn {
+            background: #00ACC1;
+            font-size: 13px;
+        }
+        #zukan-btn span { font-size: 20px; margin-bottom: 2px; }
+        #zukan-btn:hover { background: #00BCD4; }
+
+
+        /* トースト通知 */
+        #toast {
+            position: absolute;
+            top: 40px; 
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 172, 193, 0.95); 
+            color: #fff;
+            padding: 15px 40px;
+            border-radius: 4px;
+            font-size: 24px; 
+            font-weight: 300;
+            font-family: 'Noto Sans JP', sans-serif;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+            z-index: 100;
+            white-space: nowrap;
+            letter-spacing: 0.05em;
+            min-width: 500px;
+            text-align: center;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(10px); }
+        #toast.existing { background: rgba(69, 90, 100, 0.9); font-size: 18px; }
+        #toast.alert { background: #E53935; font-size: 20px; }
+
+        /* モーダル共通 */
+        .modal-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(16, 32, 39, 0.95);
+            display: none;
+            z-index: 110; 
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+        }
+        .modal-overlay.active { display: flex; }
+        
+        /* 図鑑モーダル */
+        .zukan-content {
+            background: #263238;
+            width: 95%;
+            max-width: 1200px;
+            height: 90%;
+            border-radius: 4px;
+            border: 1px solid #455a64;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 20px 0 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .zukan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+            color: #fff;
+            padding-bottom: 5px;
+            flex-shrink: 0;
+        }
+        .zukan-header h2 {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            margin: 0;
+        }
+        
+        /* ★修正: タブを左詰め、固定幅に */
+        .zukan-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 0; 
+            padding-left: 0;
+            position: relative;
+            top: 1px; 
+            z-index: 5;
+            width: 100%;
+            justify-content: flex-start;
+        }
+        .tab-btn {
+            background: #37474F;
+            color: #90A4AE;
+            border: 1px solid #455A64;
+            border-bottom: none;
+            padding: 10px 0;
+            border-radius: 6px 6px 0 0; 
+            cursor: pointer;
+            font-family: 'Noto Sans JP', sans-serif;
+            font-weight: 300;
+            font-size: 13px;
+            transition: all 0.2s;
+            position: relative;
+            text-align: center;
+            width: 100px; /* 固定幅 */
+            flex: 0 0 auto;
+        }
+        .tab-btn:hover { background: #455A64; color: #fff; }
+        .tab-btn.active {
+            background: #102027; 
+            color: #00ACC1;
+            border-color: #546E7A;
+            border-bottom: 1px solid #102027; 
+            z-index: 10;
+            font-weight: 700;
+            padding-bottom: 12px;
+            margin-top: -2px;
+            padding-top: 12px;
+        }
+
+        .modal-close-btn {
+            background: #E53935;
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 700;
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .modal-close-btn:hover { background: #ef5350; }
+        
+        .zukan-scroll-area {
+            flex: 1;
+            overflow-y: scroll;
+            background: #102027;
+            border-radius: 4px;
+            border-top-left-radius: 0; 
+            border: 1px solid #546E7A;
+            padding: 15px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .zukan-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px; 
+            min-width: 800px; 
+        }
+        .zukan-item {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background: #37474F;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #455A64;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .zukan-item.discovered {
+            cursor: pointer;
+            background: #455A64;
+            border-color: #90A4AE;
+        }
+        .zukan-item.discovered:hover {
+            background: #546E7A;
+            border-color: #B0BEC5;
+        }
+        .zukan-item.unknown::after {
+            content: "?";
+            font-size: 24px;
+            color: #546E7A;
+            font-weight: bold;
+            opacity: 0.5;
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        .zukan-item canvas {
+            width: 100%;
+            height: 100%;
+            display: none;
+            pointer-events: none;
+        }
+        .zukan-item.discovered canvas { display: block; }
+        .zukan-item.discovered::after { display: none; }
+        
+        .zukan-item .item-number {
+            position: absolute;
+            top: 4px;
+            left: 6px;
+            font-size: 15px; 
+            font-weight: 500;
+            color: rgba(255,255,255,0.4);
+            font-family: 'Noto Sans JP', sans-serif;
+            text-shadow: none;
+            z-index: 5;
+            pointer-events: none;
+        }
+        
+        .zukan-item .new-badge {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: #F50057;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            z-index: 6;
+            pointer-events: none;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .zukan-scroll-area::-webkit-scrollbar { width: 12px; height: 12px; }
+        .zukan-scroll-area::-webkit-scrollbar-track { background: #102027; }
+        .zukan-scroll-area::-webkit-scrollbar-thumb { background: #546E7A; border-radius: 6px; border: 2px solid #102027; }
+
+        /* 設定・ヘルプモーダル・確認モーダル共通 */
+        .settings-content {
+            background: #263238;
+            padding: 30px;
+            border-radius: 4px;
+            border: 1px solid #455a64;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            color: #fff;
+            width: 300px;
+        }
+        .settings-content h2 {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-weight: 300;
+        }
+        .modal-ui-btn {
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-weight: 300;
+            font-family: 'Noto Sans JP', sans-serif;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        /* スイッチスタイル */
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 300;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #546E7A;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #00ACC1;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .danger-btn {
+            background: #D32F2F;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-weight: 300;
+            font-family: 'Noto Sans JP', sans-serif;
+            margin-top: 20px;
+            width: 100%;
+            font-size: 16px;
+        }
+        .danger-btn:hover { background: #F44336; }
+
+        /* 詳細表示モーダル */
+        #detail-modal {
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 120;
+        }
+        .detail-content {
+            background: #263238;
+            padding: 30px;
+            border-radius: 4px;
+            border: 2px solid #90A4AE;
+            box-shadow: 0 0 50px rgba(255,255,255, 0.1);
+            text-align: center;
+            color: #fff;
+            width: 800px;
+            max-width: 95%;
+        }
+        .detail-header { margin-bottom: 20px; }
+        .detail-header h3 {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-weight: 300;
+            font-size: 24px;
+        }
+        .detail-number {
+            font-size: 28px;
+            color: #CFD8DC;
+            font-weight: 300;
+            margin: 0;
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        .detail-date {
+            font-size: 14px;
+            color: #B0BEC5;
+            margin-top: 5px;
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        .detail-canvas-container {
+            width: 480px; 
+            height: 360px;
+            background: #102027;
+            margin: 0 auto 20px auto;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #455A64;
+        }
+        .detail-canvas-container canvas { width: 100%; height: 100%; }
+        .detail-close {
+            background: #607D8B;
+            border: none;
+            color: white;
+            padding: 8px 24px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-weight: 300;
+            font-size: 16px;
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        .detail-close:hover { background: #78909C; }
+
+    </style>
+</head>
+<body>
+
+<button id="hamburger-btn">☰</button>
+<div id="side-menu">
+    <h1 id="menu-title">生成形オクトミノ</h1>
+    <button id="help-menu-btn" class="menu-item-btn"><span>?</span>業務内容 (ヘルプ)</button>
+    <button id="zukan-menu-btn" class="menu-item-btn"><span>📖</span>図鑑</button>
+    <button id="clear-menu-btn" class="menu-item-btn"><span>🗑️</span>盤面全削除</button>
+    <button id="settings-menu-btn" class="menu-item-btn"><span>⚙</span>設定</button>
+</div>
+
+<div id="clock-display">00:00</div>
+
+<div id="bottom-right-actions">
+    <button id="clear-all-btn" class="action-circle-btn">
+        <span>🗑️</span>全削除
+    </button>
+    
+    <button id="monomino-btn" class="action-circle-btn" disabled>
+        <div class="stock-badge" id="monomino-stock">0</div>
+        <span class="icon">■</span>召喚
+    </button>
+
+    <button id="zukan-btn" class="action-circle-btn">
+        <span>📖</span>図鑑
+    </button>
+</div>
+
+<div id="toast">New Octomino Discovered!</div>
+
+<div id="help-modal" class="modal-overlay">
+    <div class="settings-content" style="width: 600px; max-width: 90%; text-align: left;">
+        <h2 style="text-align: center; margin-bottom: 20px;">業務内容</h2>
+        <p style="text-align: center; margin-bottom: 30px; font-weight: 500; line-height: 1.6; font-size: 18px;">
+            小さなミノを組み合わせ<br>すべての種類のオクトミノを報告してください。
+        </p>
+        
+        <h3 style="border-bottom: 1px solid #546E7A; padding-bottom: 5px; margin-bottom: 10px;">基本操作</h3>
+        <ul style="line-height: 2.2; padding-left: 20px; font-weight: 300;">
+            <li>空白をダブルクリック : <span style="color:#00ACC1; font-weight:500;">ミノ生成 (4個)</span></li>
+            <li>左ドラッグ : <span style="color:#00ACC1; font-weight:500;">ミノの移動</span></li>
+            <li>マウスホイール : <span style="color:#00ACC1; font-weight:500;">ミノの回転</span></li>
+            <li>塊を右クリック : <span style="color:#FF4081; font-weight:500;">報告(登録) & 回収</span></li>
+        </ul>
+
+        <h3 style="border-bottom: 1px solid #546E7A; padding-bottom: 5px; margin-bottom: 10px; margin-top:20px;">モノミノ召喚</h3>
+        <p style="font-size:14px; color:#B0BEC5;">
+            オクトミノを報告(回収)するごとに「モノミノ(1マス)」を召喚する権利が得られます。(最大8個)
+        </p>
+
+        <button class="modal-ui-btn" style="background:#00ACC1; margin-top:30px; width:100%; display:block; text-align:center;" id="help-close">閉じる</button>
+    </div>
+</div>
+
+<div id="zukan-modal" class="modal-overlay">
+    <div class="zukan-content">
+        <div class="zukan-header">
+            <h2 style="margin:0;">オクトミノ図鑑 <span id="zukan-count" style="font-size:0.8em; color:#b0bec5;">Generating...</span></h2>
+            <button class="modal-close-btn" id="zukan-close">✕</button>
+        </div>
+        
+        <div class="zukan-tabs">
+            <button class="tab-btn active" data-tab="all">すべて</button>
+            <button class="tab-btn" data-tab="cat1">Size A</button> <button class="tab-btn" data-tab="cat2a">Size B</button> <button class="tab-btn" data-tab="cat2b">Size C</button> <button class="tab-btn" data-tab="cat2c">Size D</button> <button class="tab-btn" data-tab="cat3a">Size E</button> <button class="tab-btn" data-tab="cat3b">Size F</button> </div>
+
+        <div class="zukan-scroll-area">
+            <div class="zukan-grid" id="zukan-list">
+                </div>
+        </div>
+    </div>
+</div>
+
+<div id="settings-modal" class="modal-overlay">
+    <div class="settings-content">
+        <h2 style="margin-top:0;">設定</h2>
+        
+        <div class="setting-row">
+            <span>効果音</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="se-toggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <p style="color:#b0bec5; font-size:14px; margin-bottom:20px; border-top:1px solid #455A64; padding-top:20px;">
+            図鑑の登録状況を削除します。<br>
+            (盤面のブロックは消えません)
+        </p>
+        <button id="reset-data-btn" class="danger-btn">進捗を削除する</button>
+        <button class="modal-ui-btn" style="background:#546e7a; margin-top:10px; width:100%; display:block; text-align:center;" id="settings-close">閉じる</button>
+    </div>
+</div>
+
+<div id="confirm-modal" class="modal-overlay">
+    <div class="settings-content" style="width: 400px; max-width:90%;">
+        <h2 style="margin-top:0;">確認</h2>
+        <p id="confirm-message" style="margin-bottom:30px; font-weight:500;">
+            </p>
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button id="confirm-cancel-btn" class="modal-ui-btn" style="background:#546E7A; flex:1;">キャンセル</button>
+            <button id="confirm-ok-btn" class="danger-btn" style="margin-top:0; flex:1;">実行</button>
+        </div>
+    </div>
+</div>
+
+<div id="detail-modal" class="modal-overlay">
+    <div class="detail-content">
+        <div class="detail-header">
+            <h3 style="margin:0 0 5px 0;">オクトミノ詳細</h3>
+            <p id="detail-number" class="detail-number">No.---</p>
+            <p id="detail-date" class="detail-date">Latest Crafted: ---</p>
+        </div>
+        <div class="detail-canvas-container">
+            <canvas id="detail-canvas"></canvas>
+        </div>
+        <button class="detail-close" onclick="document.getElementById('detail-modal').classList.remove('active')">閉じる</button>
+    </div>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+// --- 設定定数 ---
+const GRID_SIZE = 50; 
+const INV_HEIGHT = 0; 
+const GAP_HEIGHT = 0;
+const ROT_SPEED = 0.45; 
+const CORNER_RADIUS = 8; 
+
+// --- 背景色の定義 ---
+const BG_COLOR_GRID_AREA = '#263238'; 
+const BG_COLOR_INV   = '#455A64';
+
+// --- サウンドシステム (Web Audio API) ---
+class SoundSystem {
+    constructor() {
+        this.ctx = null;
+        this.enabled = true;
+    }
+    init() {
+        if (!this.ctx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                this.ctx = new AudioContext();
+            }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(e => console.log(e));
+        }
+    }
+    toggleMute(isMuted) {
+        this.enabled = !isMuted;
+    }
+    playDrop() {
+        if (!this.enabled) return;
+        this.playTone('sine', 200, 50, 0.1, 0.15);
+    }
+    playRotate() {
+        if (!this.enabled) return;
+        this.playTone('sine', 400, 100, 0.05, 0.05);
+    }
+    // 出現音 (音量0.04)
+    playSpawn() {
+        if (!this.enabled || !this.ctx) return;
+        this.init();
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.1);
+
+        gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+    }
+    // ★変更: 新規登録音 (ピッ！ 高音)
+    playNewDiscovery() {
+        if (!this.enabled) return;
+        this.playTone('sine', 2000, 4000, 0.1, 0.1); 
+    }
+    // 既出 (低い)
+    playAlreadyKnown() {
+        if (!this.enabled) return;
+        this.playTone('sawtooth', 150, 50, 0.1, 0.05);
+    }
+
+    playTone(type, startFreq, endFreq, duration, volume) {
+        if (!this.enabled || !this.ctx) return;
+        this.init();
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(startFreq, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(endFreq, this.ctx.currentTime + duration);
+
+        gain.gain.setValueAtTime(volume, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    }
+}
+
+// --- 形状データの定義 ---
+const SHAPES = [
+    [[0,0]],                      // 0: Monomino
+    [[0,0], [1,0]],               // 1: Domino
+    [[0,0], [1,0], [2,0]],        // 2: Tromino I
+    [[0,0], [1,0], [0,1]],        // 3: Tromino L
+    [[0,0], [1,0], [2,0], [3,0]], // 4: Tetromino I
+    [[0,0], [1,0], [0,1], [1,1]], // 5: Tetromino O
+    [[0,0], [1,0], [2,0], [1,1]], // 6: Tetromino T
+    [[0,0], [1,0], [2,0], [0,1]], // 7: Tetromino L
+    [[0,0], [1,0], [2,0], [2,1]], // 8: Tetromino J
+    [[1,0], [2,0], [0,1], [1,1]], // 9: Tetromino S
+    [[0,0], [1,0], [1,1], [2,1]]  // 10: Tetromino Z
+];
+
+// --- 配色ロジック ---
+const SHAPE_COLORS = [
+    '#546E7A', '#FFC400', '#00B0FF', '#E040FB', '#1DE9B6', 
+    '#FF9100', '#651FFF', '#FF3D00', '#2979FF', '#00E676', '#F50057'
+];
+
+// --- ユーティリティ ---
+const normalizeShape = (points) => {
+    let mx = Infinity, my = Infinity;
+    points.forEach(p => { if(p.x<mx) mx=p.x; if(p.y<my) my=p.y; });
+    let current = points.map(p => ({x: p.x - mx, y: p.y - my}));
+
+    const variants = [];
+    const serialize = (pts) => {
+        let mnx=Infinity, mny=Infinity;
+        pts.forEach(p=>{if(p.x<mnx)mnx=p.x;if(p.y<mny)mny=p.y;});
+        const norm = pts.map(p=>({x:p.x-mnx, y:p.y-mny}));
+        norm.sort((a,b) => a.x===b.x ? a.y-b.y : a.x-b.x);
+        return norm.map(p=>`${p.x},${p.y}`).join(';');
+    };
+
+    const rotate = (p) => ({x: -p.y, y: p.x});
+    const reflect = (p) => ({x: p.x, y: -p.y});
+
+    for(let i=0; i<4; i++) {
+        variants.push(serialize(current));
+        variants.push(serialize(current.map(reflect)));
+        current = current.map(rotate);
+    }
+    variants.sort();
+    return variants[0];
+};
+
+const adjustOrientationForDisplay = (points) => {
+    let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+    points.forEach(p => {
+        if(p.x<minX)minX=p.x; if(p.x>maxX)maxX=p.x;
+        if(p.y<minY)minY=p.y; if(p.y>maxY)maxY=p.y;
+    });
+    const w = maxX - minX + 1;
+    const h = maxY - minY + 1;
+
+    if (w >= h) {
+         return points.map(p => ({x: p.x - minX, y: p.y - minY}));
+    }
+    const rotated = points.map(p => ({x: -p.y, y: p.x}));
+    let rMinX=Infinity, rMinY=Infinity;
+    rotated.forEach(p => {
+        if(p.x<rMinX)rMinX=p.x;
+        if(p.y<rMinY)rMinY=p.y;
+    });
+    return rotated.map(p => ({x: p.x - rMinX, y: p.y - rMinY}));
+};
+
+const getShortSideLength = (id) => {
+    const points = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
+    let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+    points.forEach(p => {
+        if(p.x<minX)minX=p.x; if(p.x>maxX)maxX=p.x;
+        if(p.y<minY)minY=p.y; if(p.y>maxY)maxY=p.y;
+    });
+    const w = maxX - minX + 1;
+    const h = maxY - minY + 1;
+    return Math.min(w, h);
+};
+
+const getLongSideLength = (id) => {
+    const points = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
+    let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+    points.forEach(p => {
+        if(p.x<minX)minX=p.x; if(p.x>maxX)maxX=p.x;
+        if(p.y<minY)minY=p.y; if(p.y>maxY)maxY=p.y;
+    });
+    const w = maxX - minX + 1;
+    const h = maxY - minY + 1;
+    return Math.max(w, h);
+};
+
+const drawZukanPolyomino = (ctx, blocks, logicalW, logicalH, color = '#CFD8DC', boneColor = 'rgba(0,0,0,0.15)') => {
+    ctx.clearRect(0, 0, logicalW, logicalH);
+
+    let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+    blocks.forEach(p=>{
+        if(p.x<minX)minX=p.x; if(p.x>maxX)maxX=p.x;
+        if(p.y<minY)minY=p.y; if(p.y>maxY)maxY=p.y;
+    });
+    const w = maxX - minX + 1;
+    const h = maxY - minY + 1;
+
+    const maxBlocksWidth = 9.0; 
+    const blockSize = logicalW / maxBlocksWidth;
+
+    const drawingW = w * blockSize;
+    const drawingH = h * blockSize;
+    const offsetX = (logicalW - drawingW) / 2 - minX * blockSize;
+    const offsetY = (logicalH - drawingH) / 2 - minY * blockSize;
+
+    const has = (x, y) => blocks.some(b => b.x===x && b.y===y);
+
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    const r = blockSize * 0.15; 
+    for(let b of blocks) {
+        const x = offsetX + b.x * blockSize;
+        const y = offsetY + b.y * blockSize;
+        const s = blockSize;
+
+        const u = has(b.x, b.y-1);
+        const d = has(b.x, b.y+1);
+        const l = has(b.x-1, b.y);
+        const ri = has(b.x+1, b.y);
+
+        if(l||u) ctx.moveTo(x,y); else {ctx.moveTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);}
+        if(ri||u) ctx.lineTo(x+s,y); else {ctx.lineTo(x+s-r,y);ctx.arcTo(x+s,y,x+s,y+r,r);}
+        if(ri||d) ctx.lineTo(x+s,y+s); else {ctx.lineTo(x+s,y+s-r);ctx.arcTo(x+s,y+s,x+s-r,y+s,r);}
+        if(l||d) ctx.lineTo(x,y+s); else {ctx.lineTo(x+r,y+s);ctx.arcTo(x,y+s,x,y+s-r,r);}
+    }
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 4;
+    ctx.fill();
+    ctx.shadowBlur = 0; 
+
+    const centerOff = blockSize / 2;
+    ctx.strokeStyle = boneColor;
+    ctx.lineWidth = blockSize * 0.05;
+    ctx.lineCap = 'round';
+    
+    ctx.beginPath();
+    for(let b of blocks) {
+        const cx = offsetX + b.x * blockSize + centerOff;
+        const cy = offsetY + b.y * blockSize + centerOff;
+        if(has(b.x+1, b.y)) { ctx.moveTo(cx, cy); ctx.lineTo(cx+blockSize, cy); }
+        if(has(b.x, b.y+1)) { ctx.moveTo(cx, cy); ctx.lineTo(cx, cy+blockSize); }
+    }
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(0,0,0,0.2)'; 
+    for(let b of blocks) {
+        const cx = offsetX + b.x * blockSize + centerOff;
+        const cy = offsetY + b.y * blockSize + centerOff;
+        ctx.beginPath();
+        ctx.arc(cx, cy, blockSize*0.08, 0, Math.PI*2);
+        ctx.fill();
+    }
+};
+
+const showCustomConfirm = (message, onOk) => {
+    const modal = document.getElementById('confirm-modal');
+    const msgEl = document.getElementById('confirm-message');
+    const okBtn = document.getElementById('confirm-ok-btn');
+    const cancelBtn = document.getElementById('confirm-cancel-btn');
+
+    msgEl.textContent = message;
+    
+    const close = () => {
+        modal.classList.remove('active');
+        okBtn.onclick = null;
+        cancelBtn.onclick = null;
+    };
+
+    okBtn.onclick = () => {
+        onOk();
+        close();
+    };
+    cancelBtn.onclick = close;
+
+    modal.classList.add('active');
+};
+
+// --- 図鑑システム ---
+class Zukan {
+    constructor() {
+        this.allIds = []; 
+        this.collected = new Set();
+        this.viewed = new Set();
+        this.timestamps = new Map();
+        this.container = document.getElementById('zukan-list');
+        this.countLabel = document.getElementById('zukan-count');
+        
+        this.modal = document.getElementById('zukan-modal');
+        this.settingsModal = document.getElementById('settings-modal');
+        this.detailModal = document.getElementById('detail-modal');
+        this.detailCanvas = document.getElementById('detail-canvas');
+        this.detailNumber = document.getElementById('detail-number');
+        this.detailDate = document.getElementById('detail-date');
+        
+        this.currentTab = 'all'; 
+        this.tabButtons = document.querySelectorAll('.tab-btn');
+        this.tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.tabButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.currentTab = btn.getAttribute('data-tab');
+                this.buildUI();
+            });
+        });
+
+        this.load();
+
+        document.getElementById('zukan-btn').addEventListener('click', () => this.openZukan());
+        document.getElementById('zukan-menu-btn').addEventListener('click', () => this.openZukan()); 
+        document.getElementById('zukan-close').addEventListener('click', () => this.closeZukan());
+        
+        document.getElementById('settings-menu-btn').addEventListener('click', () => this.openSettings());
+        document.getElementById('settings-close').addEventListener('click', () => this.closeSettings());
+        document.getElementById('reset-data-btn').addEventListener('click', () => this.resetData());
+
+        setTimeout(() => this.generateAllOctominoes(), 100);
+    }
+
+    openZukan() { 
+        this.modal.classList.add('active'); 
+        document.getElementById('side-menu').classList.remove('active');
+    }
+    closeZukan() { this.modal.classList.remove('active'); }
+    openSettings() { 
+        this.settingsModal.classList.add('active'); 
+        document.getElementById('side-menu').classList.remove('active');
+    }
+    closeSettings() { this.settingsModal.classList.remove('active'); }
+
+    save() {
+        try {
+            const data = JSON.stringify(Array.from(this.collected));
+            localStorage.setItem('octomino_zukan_collection', data);
+            
+            const times = {};
+            this.timestamps.forEach((val, key) => times[key] = val);
+            localStorage.setItem('octomino_zukan_timestamps', JSON.stringify(times));
+
+            const viewedData = JSON.stringify(Array.from(this.viewed));
+            localStorage.setItem('octomino_zukan_viewed', viewedData);
+        } catch(e) { console.error(e); }
+    }
+
+    load() {
+        try {
+            const data = localStorage.getItem('octomino_zukan_collection');
+            if(data) {
+                const arr = JSON.parse(data);
+                this.collected = new Set(arr);
+            }
+            const timeData = localStorage.getItem('octomino_zukan_timestamps');
+            if(timeData) {
+                const times = JSON.parse(timeData);
+                for(let key in times) {
+                    this.timestamps.set(key, times[key]);
+                }
+            }
+            const viewedData = localStorage.getItem('octomino_zukan_viewed');
+            if(viewedData) {
+                const arr = JSON.parse(viewedData);
+                this.viewed = new Set(arr);
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    resetData() {
+        showCustomConfirm("本当に進捗を削除しますか？\n(この操作は取り消せません)", () => {
+            this.collected.clear();
+            this.timestamps.clear();
+            this.viewed.clear();
+            localStorage.removeItem('octomino_zukan_collection');
+            localStorage.removeItem('octomino_zukan_timestamps');
+            localStorage.removeItem('octomino_zukan_viewed');
+            this.closeSettings();
+            this.buildUI();
+            
+            const toast = document.getElementById('toast');
+            toast.textContent = "データを削除しました";
+            toast.className = 'show alert';
+            setTimeout(() => { toast.classList.remove('show'); toast.classList.remove('alert'); }, 2000);
+        });
+    }
+
+    generateAllOctominoes() {
+        let currentShapes = [ [{x:0,y:0}] ];
+        for(let n=2; n<=8; n++) {
+            const nextShapesSet = new Set();
+            const nextShapes = [];
+            for(let shape of currentShapes) {
+                for(let block of shape) {
+                    const dirs = [{x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}];
+                    for(let d of dirs) {
+                        const nx = block.x + d.x;
+                        const ny = block.y + d.y;
+                        if(shape.some(b => b.x===nx && b.y===ny)) continue;
+                        const newShape = [...shape, {x:nx, y:ny}];
+                        const id = normalizeShape(newShape);
+                        if(!nextShapesSet.has(id)) {
+                            nextShapesSet.add(id);
+                            const points = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
+                            nextShapes.push(points);
+                        }
+                    }
+                }
+            }
+            currentShapes = nextShapes;
+        }
+        let ids = currentShapes.map(s => normalizeShape(s));
+        
+        // カテゴリ判定とソート
+        ids.sort((a, b) => {
+            const getCat = (id) => {
+                const s = getShortSideLength(id);
+                const l = getLongSideLength(id);
+                if(s <= 2) return 1;
+                if(s === 3) {
+                    if(l <= 4) return 2;
+                    if(l === 5) return 3;
+                    return 4; // l >= 6
+                }
+                // s >= 4
+                if(l === 4) return 5;
+                return 6; // l >= 5
+            };
+            
+            const catA = getCat(a);
+            const catB = getCat(b);
+            
+            if (catA !== catB) {
+                return catA - catB; 
+            }
+            return a.localeCompare(b);
+        });
+
+        this.allIds = ids;
+        this.buildUI();
+    }
+
+    buildUI() {
+        this.container.innerHTML = '';
+        const dpr = window.devicePixelRatio || 1;
+        const itemW = 160; 
+        const itemH = 120; 
+
+        // フィルタリングロジック
+        const visibleIds = this.allIds.filter(id => {
+            const s = getShortSideLength(id);
+            const l = getLongSideLength(id);
+            let cat = '';
+            if(s <= 2) cat = 'cat1';
+            else if(s === 3) {
+                if(l <= 4) cat = 'cat2a';
+                else if(l === 5) cat = 'cat2b';
+                else cat = 'cat2c';
+            }
+            else { // s >= 4
+                if(l === 4) cat = 'cat3a';
+                else cat = 'cat3b';
+            }
+
+            if (this.currentTab === 'all') return true;
+            return this.currentTab === cat;
+        });
+
+        visibleIds.forEach(id => {
+            const globalIndex = this.allIds.indexOf(id); 
+            const div = document.createElement('div');
+            const isDiscovered = this.collected.has(id);
+            div.className = isDiscovered ? 'zukan-item discovered' : 'zukan-item unknown';
+            div.id = 'zukan-' + id.replace(/[,;]/g, '_');
+            
+            const numSpan = document.createElement('span');
+            numSpan.className = 'item-number';
+            numSpan.textContent = `#${globalIndex + 1}`;
+            div.appendChild(numSpan);
+            
+            // NEWバッジ
+            if (isDiscovered && !this.viewed.has(id)) {
+                const badge = document.createElement('span');
+                badge.className = 'new-badge';
+                badge.textContent = 'NEW';
+                div.appendChild(badge);
+            }
+            
+            div.onclick = () => {
+                if (div.classList.contains('discovered')) {
+                    this.showDetail(id);
+                }
+            };
+
+            const canvas = document.createElement('canvas');
+            canvas.width = itemW * dpr;
+            canvas.height = itemH * dpr;
+            div.appendChild(canvas);
+            
+            this.container.appendChild(div);
+
+            if (isDiscovered) {
+                const ctx = canvas.getContext('2d');
+                let points = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
+                points = adjustOrientationForDisplay(points);
+                ctx.scale(dpr, dpr);
+                drawZukanPolyomino(ctx, points, itemW, itemH);
+            }
+        });
+        this.updateCount();
+    }
+
+    showDetail(id) {
+        // 既読処理
+        if (!this.viewed.has(id)) {
+            this.viewed.add(id);
+            this.save();
+            const divId = 'zukan-' + id.replace(/[,;]/g, '_');
+            const div = document.getElementById(divId);
+            if (div) {
+                const badge = div.querySelector('.new-badge');
+                if (badge) badge.remove();
+            }
+        }
+
+        let points = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
+        points = adjustOrientationForDisplay(points);
+        
+        const dpr = window.devicePixelRatio || 1;
+        const cssW = 480; 
+        const cssH = 360;
+        
+        this.detailCanvas.width = cssW * dpr;
+        this.detailCanvas.height = cssH * dpr;
+        this.detailCanvas.style.width = '100%';
+        this.detailCanvas.style.height = '100%';
+
+        const ctx = this.detailCanvas.getContext('2d');
+        ctx.resetTransform();
+        ctx.scale(dpr, dpr);
+
+        const index = this.allIds.indexOf(id);
+        this.detailNumber.textContent = `No.${index + 1}`;
+        
+        const dateStr = this.timestamps.get(id) || '---';
+        this.detailDate.textContent = `Latest Crafted: ${dateStr}`;
+
+        drawZukanPolyomino(ctx, points, cssW, cssH);
+        this.detailModal.classList.add('active');
+    }
+
+    register(blocks) {
+        if(blocks.length !== 8) return false;
+        
+        const id = normalizeShape(blocks);
+        if(!this.allIds.includes(id)) return {isNew: false, id: id, index: -1};
+
+        const index = this.allIds.indexOf(id);
+        const isNew = !this.collected.has(id);
+
+        if(isNew) {
+            this.collected.add(id);
+        }
+        
+        const now = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        this.timestamps.set(id, now);
+        
+        this.save();
+        this.unlockItem(id);
+        this.updateCount();
+        
+        return {isNew: isNew, id: id, index: index};
+    }
+
+    unlockItem(id) {
+        const divId = 'zukan-' + id.replace(/[,;]/g, '_');
+        const div = document.getElementById(divId);
+        
+        if(div) {
+            div.classList.remove('unknown');
+            div.classList.add('discovered');
+            
+            const canvas = div.querySelector('canvas');
+            const ctx = canvas.getContext('2d');
+            let points = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
+            
+            points = adjustOrientationForDisplay(points);
+            
+            const dpr = window.devicePixelRatio || 1;
+            const logicalW = 160; 
+            const logicalH = 120;
+
+            ctx.resetTransform();
+            ctx.scale(dpr, dpr);
+            
+            drawZukanPolyomino(ctx, points, logicalW, logicalH);
+
+            if (!this.viewed.has(id) && !div.querySelector('.new-badge')) {
+                const badge = document.createElement('span');
+                badge.className = 'new-badge';
+                badge.textContent = 'NEW';
+                div.appendChild(badge);
+            }
+        }
+    }
+
+    updateCount() {
+        const total = this.allIds.length;
+        if(total === 0) return;
+        const current = this.collected.size;
+        this.countLabel.textContent = `${current} / ${total}`;
+    }
+}
+
+class Polyomino {
+    constructor(blocks, x, y, color, typeId) {
+        this.blocks = JSON.parse(JSON.stringify(blocks));
+        this.x = x; 
+        this.y = y;
+        this.color = color;
+        this.typeId = typeId;
+        
+        this.isDragging = false;
+        this.inInventory = true;
+        this.slotIndex = -1;
+
+        this.currentRotation = 0; 
+        this.targetRotation = 0;
+        this.isAnimating = false;
+
+        this.prevX = x;
+        this.prevY = y;
+        this.prevInInventory = true;
+
+        this.pivotIndex = 0;
+        this.determinePivotBlock();
+
+        this.scale = 1;
+        this.opacity = 1; 
+        this.animState = 'idle'; 
+        this.animProgress = 0;
+    }
+
+    startAppearAnimation() {
+        this.animState = 'appearing';
+        this.animProgress = 0;
+        this.scale = 0.5; 
+        this.opacity = 0; 
+    }
+
+    startDeleteAnimation() {
+        this.animState = 'deleting';
+        this.animProgress = 0;
+    }
+
+    determinePivotBlock() {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        this.blocks.forEach(([bx, by]) => {
+            minX = Math.min(minX, bx); maxX = Math.max(maxX, bx);
+            minY = Math.min(minY, by); maxY = Math.max(maxY, by);
+        });
+        const cx = (minX + maxX) / 2;
+        const cy = (minY + maxY) / 2;
+
+        let minDist = Infinity;
+        let bestIndex = 0;
+
+        this.blocks.forEach((b, i) => {
+            const dist = (b[0] - cx)**2 + (b[1] - cy)**2;
+            if (dist < minDist) {
+                minDist = dist;
+                bestIndex = i;
+            }
+        });
+        this.pivotIndex = bestIndex;
+    }
+
+    simulateRotation(dir) {
+        let rotatedBlocks = this.blocks.map(([x, y]) => {
+            return dir === 1 ? [-y, x] : [y, -x];
+        });
+
+        let minX = Infinity, minY = Infinity;
+        rotatedBlocks.forEach(([x,y]) => {
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+        });
+        rotatedBlocks = rotatedBlocks.map(([x,y]) => [x - minX, y - minY]);
+
+        if (this.typeId === 5) {
+            return { blocks: rotatedBlocks, x: this.x, y: this.y };
+        }
+
+        const pivotBlock = this.blocks[this.pivotIndex];
+        const pivotAbsX = this.x + pivotBlock[0] * GRID_SIZE;
+        const pivotAbsY = this.y + pivotBlock[1] * GRID_SIZE;
+
+        const newPivotBlock = rotatedBlocks[this.pivotIndex];
+        const newRelX = newPivotBlock[0] * GRID_SIZE;
+        const newRelY = newPivotBlock[1] * GRID_SIZE;
+
+        return {
+            blocks: rotatedBlocks,
+            x: Math.round(pivotAbsX - newRelX),
+            y: Math.round(pivotAbsY - newRelY)
+        };
+    }
+
+    applyRotationLogic(sim) {
+        this.blocks = sim.blocks;
+        this.x = sim.x;
+        this.y = sim.y;
+        this.currentRotation = 0;
+        this.targetRotation = 0;
+    }
+
+    update() {
+        let rotationFinished = false;
+
+        if (this.isAnimating) {
+            const diff = this.targetRotation - this.currentRotation;
+            if (Math.abs(diff) < 0.01) {
+                this.currentRotation = this.targetRotation;
+                this.applyRotationLogic(this.pendingSimulation);
+                this.isAnimating = false;
+                this.pendingSimulation = null;
+                rotationFinished = true;
+            } else {
+                this.currentRotation += diff * ROT_SPEED;
+            }
+        }
+
+        if (this.animState === 'appearing') {
+            this.animProgress += 0.04; 
+            if (this.animProgress >= 1) {
+                this.animProgress = 1;
+                this.animState = 'idle';
+            }
+            const t = this.animProgress;
+            const ease = 1 - Math.pow(1 - t, 3); 
+            
+            this.scale = 0.5 + 0.5 * ease; 
+            this.opacity = ease; 
+
+        } else if (this.animState === 'deleting') {
+            this.animProgress += 0.08;
+            this.opacity = 1 - this.animProgress;
+            if (this.opacity <= 0) {
+                this.opacity = 0;
+                this.isDead = true; 
+            }
+        }
+
+        return rotationFinished;
+    }
+
+    draw(ctx, colorOverride = null) {
+        if (this.opacity <= 0 && this.animState !== 'appearing') return;
+
+        ctx.save();
+        
+        let cx, cy;
+        if (this.typeId === 5) {
+            cx = this.x + 1.0 * GRID_SIZE;
+            cy = this.y + 1.0 * GRID_SIZE;
+        } else if (this.typeId === 0) {
+             cx = this.x + 0.5 * GRID_SIZE;
+             cy = this.y + 0.5 * GRID_SIZE;
+        } else {
+            const pivotBlock = this.blocks[this.pivotIndex];
+            cx = this.x + (pivotBlock[0] + 0.5) * GRID_SIZE;
+            cy = this.y + (pivotBlock[1] + 0.5) * GRID_SIZE;
+        }
+
+        ctx.translate(cx, cy);
+        
+        if (this.animState !== 'idle' || this.scale !== 1) {
+            ctx.scale(this.scale, this.scale);
+        }
+        if (this.opacity !== 1) {
+            ctx.globalAlpha = this.opacity;
+        }
+
+        ctx.rotate(this.currentRotation);
+        ctx.translate(-cx, -cy);
+
+        ctx.shadowBlur = 0;
+
+        const baseColor = colorOverride || this.color;
+        
+        ctx.fillStyle = baseColor;
+        this.drawRoundedPath(ctx);
+        ctx.fill();
+
+        this.drawBonesAndDots(ctx);
+
+        ctx.restore();
+    }
+
+    drawRoundedPath(ctx) {
+        const has = (x, y) => this.has(x, y);
+        ctx.beginPath();
+        for (let [bx, by] of this.blocks) {
+            const x = this.x + bx * GRID_SIZE;
+            const y = this.y + by * GRID_SIZE;
+            const s = GRID_SIZE;
+            const r = CORNER_RADIUS;
+
+            const u = has(bx, by-1);
+            const d = has(bx, by+1);
+            const l = has(bx-1, by);
+            const ri = has(bx+1, by);
+
+            if (l || u) ctx.moveTo(x, y);
+            else { ctx.moveTo(x, y+r); ctx.arcTo(x, y, x+r, y, r); }
+            
+            if (ri || u) ctx.lineTo(x+s, y);
+            else { ctx.lineTo(x+s-r, y); ctx.arcTo(x+s, y, x+s, y+r, r); }
+            
+            if (ri || d) ctx.lineTo(x+s, y+s);
+            else { ctx.lineTo(x+s, y+s-r); ctx.arcTo(x+s, y+s, x+s-r, y+s, r); }
+            
+            if (l || d) ctx.lineTo(x, y+s);
+            else { ctx.lineTo(x+r, y+s); ctx.arcTo(x, y+s, x, y+s-r, r); }
+        }
+    }
+
+    drawBonesAndDots(ctx) {
+        const centerOffset = GRID_SIZE / 2;
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)'; 
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        for (let [bx, by] of this.blocks) {
+            const cx = this.x + bx * GRID_SIZE + centerOffset;
+            const cy = this.y + by * GRID_SIZE + centerOffset;
+            if (this.has(bx + 1, by)) {
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + GRID_SIZE, cy);
+            }
+            if (this.has(bx, by + 1)) {
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(cx, cy + GRID_SIZE);
+            }
+        }
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff'; 
+        for (let [bx, by] of this.blocks) {
+            const cx = this.x + bx * GRID_SIZE + centerOffset;
+            const cy = this.y + by * GRID_SIZE + centerOffset;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    
+    has(x, y) {
+        return this.blocks.some(b => b[0]===x && b[1]===y);
+    }
+}
+
+class Game {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.pieces = [];
+        this.dragTarget = null;
+        this.dragOffset = {x:0, y:0};
+        
+        this.glowingCells = new Set(); 
+        this.glowingClusterPieces = []; 
+
+        this.zukan = new Zukan();
+        this.sound = new SoundSystem(); 
+
+        this.tetrominoBag = [];
+        this.monominoStock = 0;
+        this.maxMonominoStock = 8;
+
+        this.dpr = window.devicePixelRatio || 1;
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        this.initInput();
+        
+        // ★修正: 起動時のヘルプ表示制御 (登録数が0なら表示)
+        if (this.zukan.collected.size === 0) {
+            this.initHelp();
+        }
+
+        setInterval(() => this.updateClock(), 1000);
+        this.updateClock(); 
+
+        // 設定のスイッチイベント
+        document.getElementById('se-toggle').addEventListener('change', (e) => {
+            this.sound.toggleMute(!e.target.checked);
+        });
+
+        requestAnimationFrame((t) => this.loop(t));
+    }
+    
+    // --- UI/初期化 ---
+    initHelp() {
+        const modal = document.getElementById('help-modal');
+        const helpBtn = document.getElementById('help-menu-btn');
+        const close = document.getElementById('help-close');
+
+        const open = () => {
+            modal.classList.add('active');
+            document.getElementById('side-menu').classList.remove('active');
+        };
+        const closeFunc = () => modal.classList.remove('active');
+
+        helpBtn.addEventListener('click', open);
+        close.addEventListener('click', closeFunc);
+
+        open();
+    }
+
+    updateClock() {
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('clock-display').textContent = `${h}:${m}`;
+    }
+
+    resize() {
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+
+        this.dpr = window.devicePixelRatio || 1;
+        this.canvas.width = this.width * this.dpr;
+        this.canvas.height = this.height * this.dpr;
+
+        this.canvas.style.width = this.width + 'px';
+        this.canvas.style.height = this.height + 'px';
+
+        this.ctx.scale(this.dpr, this.dpr);
+    }
+
+    // --- モノミノ召喚システム ---
+    addMonominoStock(amount) {
+        this.monominoStock = Math.min(this.monominoStock + amount, this.maxMonominoStock);
+        this.updateMonominoUI();
+    }
+
+    consumeMonominoStock() {
+        if (this.monominoStock > 0) {
+            this.monominoStock--;
+            this.updateMonominoUI();
+            return true;
+        }
+        return false;
+    }
+
+    updateMonominoUI() {
+        const btn = document.getElementById('monomino-btn');
+        const label = document.getElementById('monomino-stock');
+        label.textContent = `${this.monominoStock}`;
+        btn.disabled = (this.monominoStock <= 0);
+    }
+
+    spawnMonomino() {
+        if (!this.consumeMonominoStock()) return;
+
+        this.sound.init();
+        this.sound.playSpawn();
+
+        const cx = this.width / 2;
+        const cy = this.height / 2;
+        const gridX = Math.floor(cx / GRID_SIZE);
+        const gridY = Math.floor(cy / GRID_SIZE);
+
+        const offsets = [];
+        const radius = 20; 
+        for(let r=0; r<=radius; r++) {
+            for(let x=-r; x<=r; x++) {
+                for(let y=-r; y<=r; y++) {
+                    if (Math.abs(x) === r || Math.abs(y) === r) {
+                        offsets.push({x, y});
+                    }
+                }
+            }
+        }
+
+        const typeId = 0; 
+        const s = SHAPES[typeId];
+        const c = SHAPE_COLORS[typeId];
+
+        for(let off of offsets) {
+            const tx = (gridX + off.x) * GRID_SIZE; 
+            const ty = (gridY + off.y) * GRID_SIZE;
+            
+            if (tx < 0 || tx > this.width - GRID_SIZE || ty < 0 || ty > this.height - GRID_SIZE) continue;
+
+            const p = new Polyomino(s, tx, ty, c, typeId);
+            
+            const checkState = { blocks: p.blocks, x: p.x, y: p.y };
+            if (this.isValidState(checkState, p)) {
+                p.startAppearAnimation();
+                this.pieces.push(p); 
+                break;
+            }
+        }
+        this.checkClusters();
+    }
+
+    spawnBlockSet(cx, cy) {
+        this.sound.init();
+        this.sound.playSpawn(); 
+
+        const gridX = Math.floor(cx / GRID_SIZE);
+        const gridY = Math.floor(cy / GRID_SIZE);
+
+        if (this.tetrominoBag.length === 0) {
+            this.tetrominoBag = [4, 5, 6, 7, 8, 9, 10];
+            for (let i = this.tetrominoBag.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [this.tetrominoBag[i], this.tetrominoBag[j]] = [this.tetrominoBag[j], this.tetrominoBag[i]];
+            }
+        }
+        const nextTetrominoId = this.tetrominoBag.pop();
+
+        const typesToSpawn = [
+            1, // Domino
+            2, // Tromino I
+            3, // Tromino L
+            nextTetrominoId
+        ];
+        typesToSpawn.sort(() => Math.random() - 0.5);
+
+        const offsets = [];
+        const radius = 15; 
+        for(let r=0; r<=radius; r++) {
+            for(let x=-r; x<=r; x++) {
+                for(let y=-r; y<=r; y++) {
+                    if (Math.abs(x) === r || Math.abs(y) === r) {
+                        offsets.push({x, y});
+                    }
+                }
+            }
+        }
+
+        for (let typeId of typesToSpawn) {
+            const s = SHAPES[typeId];
+            const c = SHAPE_COLORS[typeId];
+            
+            let placed = false;
+            for(let off of offsets) {
+                const tx = (gridX + off.x) * GRID_SIZE; 
+                const ty = (gridY + off.y) * GRID_SIZE;
+                
+                if (tx < 0 || tx > this.width - GRID_SIZE || ty < 0 || ty > this.height - GRID_SIZE) continue;
+
+                const p = new Polyomino(s, tx, ty, c, typeId);
+                
+                const checkState = { blocks: p.blocks, x: p.x, y: p.y };
+                if (this.isValidState(checkState, p)) {
+                    p.startAppearAnimation();
+                    this.pieces.push(p); 
+                    placed = true;
+                    break;
+                }
+            }
+        }
+        this.checkClusters();
+    }
+
+    clearAllPieces() {
+        showCustomConfirm("盤面のブロックを全て削除しますか？\n(図鑑の進捗は消えません)", () => {
+            this.pieces = [];
+            this.checkClusters();
+        });
+    }
+
+    getPieceAt(mx, my) {
+        for (let i = this.pieces.length - 1; i >= 0; i--) {
+            const p = this.pieces[i];
+            if (p.animState === 'deleting' || p.scale < 0.5) continue;
+
+            let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+            p.blocks.forEach(([bx,by])=>{minX=Math.min(minX,bx); maxX=Math.max(maxX,bx); minY=Math.min(minY,by); maxY=Math.max(maxY,by);});
+            
+            const px = p.x; const py = p.y;
+            if (mx >= px + minX*GRID_SIZE && mx < px + (maxX+1)*GRID_SIZE &&
+                my >= py + minY*GRID_SIZE && my < py + (maxY+1)*GRID_SIZE) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    isValidState(state, ignorePiece) {
+        const snapX = Math.round(state.x / GRID_SIZE) * GRID_SIZE;
+        const snapY = Math.round(state.y / GRID_SIZE) * GRID_SIZE;
+        
+        let minY = Infinity;
+        state.blocks.forEach(b => minY = Math.min(minY, b[1]));
+        
+        for (let [bx, by] of state.blocks) {
+            const absX = snapX + bx * GRID_SIZE;
+            const absY = snapY + by * GRID_SIZE;
+
+            if (absX < 0 || absX + GRID_SIZE > this.width || absY < 0 || absY + GRID_SIZE > this.height) return false;
+
+            for (let other of this.pieces) {
+                if (other === ignorePiece) continue;
+                if (other.animState === 'deleting') continue;
+
+                const oX = Math.round(other.x / GRID_SIZE) * GRID_SIZE;
+                const oY = Math.round(other.y / GRID_SIZE) * GRID_SIZE;
+                
+                for (let [obx, oby] of other.blocks) {
+                    const oAbsX = oX + obx * GRID_SIZE;
+                    const oAbsY = oY + oby * GRID_SIZE;
+                    if (Math.abs(absX - oAbsX) < 10 && Math.abs(absY - oAbsY) < 10) return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    checkClusters() {
+        const placed = this.pieces.filter(p => !p.isDragging && p.animState !== 'deleting');
+        
+        this.glowingCells.clear();
+        this.glowingClusterPieces = []; 
+
+        const gridMap = new Map();
+        placed.forEach(p => {
+            const gridX = Math.round(p.x / GRID_SIZE);
+            const gridY = Math.round(p.y / GRID_SIZE);
+            p.blocks.forEach(([bx, by]) => {
+                const key = `${gridX + bx},${gridY + by}`;
+                gridMap.set(key, p);
+            });
+        });
+
+        const visited = new Set();
+
+        for (let p of placed) {
+            if (visited.has(p)) continue;
+
+            const cluster = [p];
+            const queue = [p];
+            visited.add(p);
+            let totalBlocks = 0;
+
+            while(queue.length > 0) {
+                const curr = queue.shift();
+                totalBlocks += curr.blocks.length;
+
+                const cx = Math.round(curr.x / GRID_SIZE);
+                const cy = Math.round(curr.y / GRID_SIZE);
+
+                curr.blocks.forEach(([bx, by]) => {
+                    const gx = cx + bx;
+                    const gy = cy + by;
+                    const neighbors = [
+                        `${gx+1},${gy}`, `${gx-1},${gy}`, 
+                        `${gx},${gy+1}`, `${gx},${gy-1}`
+                    ];
+                    
+                    neighbors.forEach(key => {
+                        if (gridMap.has(key)) {
+                            const neighborPiece = gridMap.get(key);
+                            if (!visited.has(neighborPiece)) {
+                                visited.add(neighborPiece);
+                                cluster.push(neighborPiece);
+                                queue.push(neighborPiece);
+                            }
+                        }
+                    });
+                });
+            }
+
+            if (totalBlocks === 8) {
+                cluster.forEach(cp => {
+                    const cx = Math.round(cp.x / GRID_SIZE);
+                    const cy = Math.round(cp.y / GRID_SIZE);
+                    cp.blocks.forEach(([bx, by]) => {
+                        this.glowingCells.add(`${cx + bx},${cy + by}`);
+                    });
+                });
+                this.glowingClusterPieces.push(cluster);
+            }
+        }
+    }
+
+    tryRegisterOctomino(clickedPiece) {
+        const targetCluster = this.glowingClusterPieces.find(cluster => cluster.includes(clickedPiece));
+        
+        if (!targetCluster) return;
+
+        const blocks = [];
+        targetCluster.forEach(p => {
+            const gx = Math.round(p.x / GRID_SIZE);
+            const gy = Math.round(p.y / GRID_SIZE);
+            p.blocks.forEach(([bx, by]) => {
+                blocks.push({x: gx+bx, y: gy+by});
+            });
+        });
+
+        const result = this.zukan.register(blocks);
+        const num = result.index + 1;
+
+        if (result.index === -1) {
+            this.showToast("Unknown Shape", false);
+        } else {
+            if (result.isNew) {
+                this.showToast(`オクトミノ#${num}を登録しました`, true);
+                this.sound.playNewDiscovery(); 
+            } else {
+                this.showToast(`オクトミノ#${num}はすでに登録されています`, false);
+                this.sound.playAlreadyKnown(); 
+            }
+            this.addMonominoStock(1);
+        }
+
+        targetCluster.forEach(p => {
+            p.startDeleteAnimation();
+        });
+        
+        this.checkClusters(); 
+    }
+
+    showToast(msg, isNew) {
+        const toast = document.getElementById('toast');
+        if (this.toastTimer) clearTimeout(this.toastTimer);
+        
+        // クラスリセットしてアニメーションを再始動させる
+        toast.className = '';
+        void toast.offsetWidth; // リフロー強制
+
+        toast.textContent = msg;
+        toast.className = isNew ? 'show' : 'show existing';
+        
+        this.toastTimer = setTimeout(() => {
+            toast.classList.remove('show');
+            toast.classList.remove('existing');
+        }, 2000);
+    }
+
+    tryRotate(piece, dir) {
+        if (piece.isAnimating || piece.isDragging || piece.animState !== 'idle') return;
+        
+        this.sound.init();
+
+        const sim = piece.simulateRotation(dir);
+        
+        const checkState = {
+            blocks: sim.blocks,
+            x: sim.x,
+            y: sim.y
+        };
+
+        if (this.isValidState(checkState, piece)) {
+            piece.pendingSimulation = sim;
+            piece.targetRotation += dir * (Math.PI / 2);
+            piece.isAnimating = true;
+            this.sound.playRotate(); 
+        }
+    }
+
+    initInput() {
+        const ham = document.getElementById('hamburger-btn');
+        const menu = document.getElementById('side-menu');
+        ham.addEventListener('click', () => {
+            menu.classList.toggle('active');
+        });
+        
+        document.getElementById('clear-menu-btn').addEventListener('click', () => {
+            this.clearAllPieces();
+            menu.classList.remove('active');
+        });
+        
+        // ★追加: ハンバーガー内の図鑑ボタン
+        document.getElementById('zukan-menu-btn').addEventListener('click', () => {
+            this.zukan.openZukan();
+            menu.classList.remove('active');
+        });
+
+        document.getElementById('clear-all-btn').addEventListener('click', () => {
+            this.clearAllPieces();
+        });
+
+        document.getElementById('monomino-btn').addEventListener('click', () => {
+            this.spawnMonomino();
+        });
+
+        this.canvas.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            const p = this.getPieceAt(e.clientX, e.clientY);
+            if (p) {
+                this.tryRegisterOctomino(p);
+            }
+        });
+
+        this.canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            const p = this.dragTarget || this.getPieceAt(e.clientX, e.clientY);
+            if (p) {
+                const dir = e.deltaY > 0 ? 1 : -1;
+                this.tryRotate(p, dir);
+            }
+        }, { passive: false });
+
+        this.canvas.addEventListener('dblclick', e => {
+            e.preventDefault();
+            if (!this.getPieceAt(e.clientX, e.clientY)) {
+                this.spawnBlockSet(e.clientX, e.clientY);
+            }
+        });
+
+        this.canvas.addEventListener('mousedown', e => {
+            if (e.button !== 0) return;
+            this.sound.init();
+
+            const p = this.getPieceAt(e.clientX, e.clientY);
+            if (p && !p.isAnimating && p.animState === 'idle') {
+                this.dragTarget = p;
+                this.dragOffset = {x: e.clientX - p.x, y: e.clientY - p.y};
+                p.isDragging = true;
+                p.prevX = p.x; p.prevY = p.y;
+                
+                this.pieces.push(this.pieces.splice(this.pieces.indexOf(p), 1)[0]);
+                document.body.classList.add('cursor-grabbing');
+
+                this.checkClusters();
+            } else {
+                if(menu.classList.contains('active')) {
+                    menu.classList.remove('active');
+                }
+            }
+        });
+
+        this.canvas.addEventListener('mousemove', e => {
+            const hover = this.getPieceAt(e.clientX, e.clientY);
+            this.canvas.className = hover ? 'cursor-grab' : '';
+
+            if (this.dragTarget) {
+                this.dragTarget.x = e.clientX - this.dragOffset.x;
+                this.dragTarget.y = e.clientY - this.dragOffset.y;
+            }
+        });
+
+        this.canvas.addEventListener('mouseup', e => {
+            if (e.button === 0 && this.dragTarget) {
+                this.dropPiece(this.dragTarget);
+                
+                this.dragTarget.isDragging = false; 
+                this.checkClusters();
+                
+                this.dragTarget = null;
+                document.body.classList.remove('cursor-grabbing');
+            }
+        });
+    }
+
+    dropPiece(p) {
+        const snapX = Math.round(p.x / GRID_SIZE) * GRID_SIZE;
+        const snapY = Math.round(p.y / GRID_SIZE) * GRID_SIZE;
+
+        const checkState = { blocks: p.blocks, x: snapX, y: snapY };
+        if (this.isValidState(checkState, p)) {
+            if (p.x !== snapX || p.y !== snapY) {
+                this.sound.playDrop(); 
+            }
+            p.x = snapX;
+            p.y = snapY;
+        } else {
+            p.x = p.prevX;
+            p.y = p.prevY;
+        }
+    }
+
+    drawBackgrounds() {
+        this.ctx.clearRect(0, 0, this.width, this.height);
+        this.ctx.fillStyle = BG_COLOR_GRID_AREA;
+        this.ctx.fillRect(0, 0, this.width, this.height);
+    }
+
+    drawGlowingLinesEffect() {
+        if (this.glowingCells.size === 0) return;
+
+        this.ctx.save();
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)'; 
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        this.ctx.lineWidth = 4;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        this.ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+        this.ctx.shadowBlur = 10; 
+
+        this.ctx.beginPath();
+        for (let key of this.glowingCells) {
+            const [gx, gy] = key.split(',').map(Number);
+            const cx = gx * GRID_SIZE + GRID_SIZE / 2;
+            const cy = gy * GRID_SIZE + GRID_SIZE / 2;
+
+            if (this.glowingCells.has(`${gx+1},${gy}`)) {
+                this.ctx.moveTo(cx, cy);
+                this.ctx.lineTo(cx + GRID_SIZE, cy);
+            }
+            if (this.glowingCells.has(`${gx},${gy+1}`)) {
+                this.ctx.moveTo(cx, cy);
+                this.ctx.lineTo(cx, cy + GRID_SIZE);
+            }
+        }
+        this.ctx.stroke();
+        
+        for (let key of this.glowingCells) {
+            const [gx, gy] = key.split(',').map(Number);
+            const cx = gx * GRID_SIZE + GRID_SIZE / 2;
+            const cy = gy * GRID_SIZE + GRID_SIZE / 2;
+            this.ctx.beginPath();
+            this.ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+
+        this.ctx.restore();
+    }
+
+    drawGridDots() {
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)'; 
+
+        for (let x = 0; x <= this.width; x += GRID_SIZE) {
+            for (let y = 0; y <= this.height; y += GRID_SIZE) {
+                const cx = x + GRID_SIZE / 2;
+                const cy = y + GRID_SIZE / 2;
+                if (cx > this.width || cy > this.height) continue;
+
+                this.ctx.beginPath();
+                this.ctx.arc(cx, cy, 1.5, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+        }
+    }
+
+    loop(timestamp) {
+        this.drawBackgrounds();
+        this.drawGridDots();
+
+        // 削除完了したピースを除去
+        this.pieces = this.pieces.filter(p => !p.isDead);
+
+        let needClusterUpdate = false;
+        for (let p of this.pieces) {
+            const rotationFinished = p.update();
+            if (rotationFinished) {
+                needClusterUpdate = true;
+            }
+            
+            let colorOverride = null;
+            if (p.isDragging) {
+                const snapX = Math.round(p.x / GRID_SIZE) * GRID_SIZE;
+                const snapY = Math.round(p.y / GRID_SIZE) * GRID_SIZE;
+                if (!this.isValidState({blocks: p.blocks, x: snapX, y: snapY}, p)) {
+                    colorOverride = '#90A4AE'; 
+                }
+            }
+            p.draw(this.ctx, colorOverride);
+        }
+
+        if (needClusterUpdate) {
+            this.checkClusters();
+        }
+
+        this.drawGlowingLinesEffect();
+
+        requestAnimationFrame((t) => this.loop(t));
+    }
+}
+
+window.onload = () => new Game();
+</script>
+</body>
+</html>
