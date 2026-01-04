@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>生成形オクトミノ</title>
+    <title>Okutomino</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,7 +49,6 @@
             left: 25px;
             width: 50px;
             height: 50px;
-            /* 背景を透明に変更 */
             background: transparent;
             border: none;
             border-radius: 4px;
@@ -63,7 +62,6 @@
             pointer-events: auto;
             transition: background 0.2s;
         }
-        /* ホバー時は少し背景を出す */
         #hamburger-btn:hover { background: rgba(55, 71, 79, 0.5); }
 
         /* サイドメニュー本体 */
@@ -1558,6 +1556,22 @@ class Polyomino {
         this.animProgress = 0;
     }
 
+    // ★追加: シリアライズ（保存用データ生成）
+    serialize() {
+        return {
+            blocks: this.blocks,
+            x: this.x,
+            y: this.y,
+            color: this.color,
+            typeId: this.typeId
+        };
+    }
+
+    // ★追加: デシリアライズ（データから復元）
+    static deserialize(d) {
+        return new Polyomino(d.blocks, d.x, d.y, d.color, d.typeId);
+    }
+
     startAppearAnimation() {
         this.animState = 'appearing';
         this.animProgress = 0;
@@ -1813,7 +1827,42 @@ class Game {
             this.sound.toggleMute(!e.target.checked);
         });
 
+        // ★追加: ゲーム状態のロード
+        this.loadGame();
+
         requestAnimationFrame((t) => this.loop(t));
+    }
+
+    // ★追加: 状態保存
+    saveGame() {
+        // 削除アニメーション中のピースは保存対象から除外（リロード時には既に消えた状態にする）
+        const validPieces = this.pieces
+            .filter(p => p.animState !== 'deleting')
+            .map(p => p.serialize());
+
+        const data = {
+            pieces: validPieces,
+            stock: this.monominoStock
+        };
+        localStorage.setItem('octomino_game_state', JSON.stringify(data));
+    }
+
+    // ★追加: 状態ロード
+    loadGame() {
+        const json = localStorage.getItem('octomino_game_state');
+        if (json) {
+            try {
+                const data = JSON.parse(json);
+                this.monominoStock = data.stock || 0;
+                if (Array.isArray(data.pieces)) {
+                    this.pieces = data.pieces.map(d => Polyomino.deserialize(d));
+                }
+                this.updateMonominoUI();
+                this.checkClusters();
+            } catch (e) {
+                console.error("Save data corrupted", e);
+            }
+        }
     }
     
     // --- UI/初期化 ---
@@ -1922,6 +1971,7 @@ class Game {
             }
         }
         this.checkClusters();
+        this.saveGame(); // ★保存
     }
 
     spawnBlockSet(cx, cy) {
@@ -2000,12 +2050,14 @@ class Game {
             }
         }
         this.checkClusters();
+        this.saveGame(); // ★保存
     }
 
     clearAllPieces() {
         showCustomConfirm("盤上のミノを全て削除します", () => {
             this.pieces = [];
             this.checkClusters();
+            this.saveGame(); // ★保存
         });
     }
 
@@ -2160,7 +2212,8 @@ class Game {
             p.startDeleteAnimation();
         });
         
-        this.checkClusters(); 
+        this.checkClusters();
+        this.saveGame(); // ★保存 (ストック増加、削除状態の記録)
     }
 
     showToast(msg, isNew) {
@@ -2305,6 +2358,7 @@ class Game {
             p.x = p.prevX;
             p.y = p.prevY;
         }
+        this.saveGame(); // ★保存
     }
 
     drawBackgrounds() {
@@ -2375,13 +2429,22 @@ class Game {
         this.drawGridDots();
 
         // 削除完了したピースを除去
+        const prevCount = this.pieces.length;
         this.pieces = this.pieces.filter(p => !p.isDead);
+        const currentCount = this.pieces.length;
+        
+        if (prevCount !== currentCount) {
+            this.saveGame(); // ★削除完了時に保存
+        }
 
         let needClusterUpdate = false;
+        let anyRotationFinished = false;
+
         for (let p of this.pieces) {
             const rotationFinished = p.update();
             if (rotationFinished) {
                 needClusterUpdate = true;
+                anyRotationFinished = true;
             }
             
             let colorOverride = null;
@@ -2397,6 +2460,10 @@ class Game {
 
         if (needClusterUpdate) {
             this.checkClusters();
+        }
+        
+        if (anyRotationFinished) {
+            this.saveGame(); // ★回転終了時に保存
         }
 
         this.drawGlowingLinesEffect();
