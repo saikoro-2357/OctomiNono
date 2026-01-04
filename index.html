@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Okutomino</title>
+    <title>Okutomino & Nonomino</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,7 +49,6 @@
             left: 25px;
             width: 50px;
             height: 50px;
-            /* 背景を透明に変更 */
             background: transparent;
             border: none;
             border-radius: 4px;
@@ -63,7 +62,6 @@
             pointer-events: auto;
             transition: background 0.2s;
         }
-        /* ホバー時は少し背景を出す */
         #hamburger-btn:hover { background: rgba(55, 71, 79, 0.5); }
 
         /* サイドメニュー本体 */
@@ -240,7 +238,16 @@
             text-align: center;
         }
         #toast.show { opacity: 1; transform: translateX(-50%) translateY(10px); }
-        #toast.existing { background: rgba(69, 90, 100, 0.9); font-size: 18px; }
+        
+        /* 既出 (デフォルト/グレー) */
+        #toast.existing { background: rgba(69, 90, 100, 0.95); font-size: 18px; }
+        
+        /* オクトミノ新種 (水色) */
+        #toast.new-octo { background: rgba(0, 172, 193, 0.95); font-size: 24px; }
+        
+        /* ノノミノ新種 (ピンク) */
+        #toast.new-nono { background: #EC407A; font-size: 24px; }
+        
         #toast.alert { background: #E53935; font-size: 20px; }
 
         /* モーダル共通 */
@@ -286,6 +293,18 @@
             margin: 0;
         }
         
+        /* カテゴリ説明エリア */
+        #category-description {
+            color: #90A4AE;
+            font-size: 14px;
+            margin: 0 0 10px 0;
+            padding-left: 10px;
+            font-family: 'Noto Sans JP', sans-serif;
+            border-left: 4px solid #00ACC1; /* デフォルト */
+            line-height: 1.2;
+            transition: border-color 0.3s;
+        }
+
         /* タブエリア */
         .zukan-tabs {
             display: flex;
@@ -304,16 +323,16 @@
             color: #90A4AE;
             border: 1px solid #455A64;
             border-bottom: none;
-            padding: 10px 0;
+            padding: 8px 0;
             border-radius: 6px 6px 0 0; 
             cursor: pointer;
             font-family: 'Noto Sans JP', sans-serif;
             font-weight: 300;
-            font-size: 13px;
+            font-size: 12px;
             transition: all 0.2s;
             position: relative;
             text-align: center;
-            width: 100px;
+            width: 50px; 
             flex: 0 0 auto;
         }
         .tab-btn:hover { background: #455A64; color: #fff; }
@@ -324,32 +343,31 @@
             border-bottom: 1px solid #102027; 
             z-index: 10;
             font-weight: 700;
-            padding-bottom: 12px;
+            padding-bottom: 10px;
             margin-top: -2px;
-            padding-top: 12px;
+            padding-top: 10px;
         }
 
-        /* 閉じるボタン */
+        /* 閉じるボタン (透明化) */
         .modal-close-btn {
-            background: #E53935;
+            background: transparent;
             border: none;
-            color: white;
+            color: #90A4AE;
             width: 40px;
             height: 40px;
             border-radius: 4px;
             cursor: pointer;
-            font-weight: 700;
+            font-weight: 300;
             font-family: 'Noto Sans JP', sans-serif;
-            font-size: 20px;
+            font-size: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding-bottom: 4px; 
-            padding-right: 0;
-            padding-left: 0;
-            padding-top: 0;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.2s;
         }
-        .modal-close-btn:hover { background: #ef5350; }
+        .modal-close-btn:hover { color: #fff; }
         
         .zukan-scroll-area {
             flex: 1;
@@ -420,6 +438,19 @@
             text-shadow: none;
             z-index: 5;
             pointer-events: none;
+        }
+
+        .zukan-item .block-count {
+            position: absolute;
+            bottom: 4px;
+            left: 6px;
+            font-size: 16px; 
+            font-weight: 700;
+            /* colorはJSで動的に指定 */
+            font-family: 'Noto Sans JP', sans-serif;
+            z-index: 5;
+            pointer-events: none;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.8);
         }
 
         .zukan-item .count-badge {
@@ -607,6 +638,7 @@
             z-index: 10;
             line-height: 1;
             padding: 0;
+            transition: color 0.2s;
         }
         .detail-close-x:hover { color: #fff; }
 
@@ -616,20 +648,38 @@
             align-items: center;
             font-size: 16px;
             gap: 10px;
-            margin-bottom: 0;
+            margin-bottom: 4px; /* 詰める */
         }
         .stat-label {
             width: 30px; 
             text-align: center;
             flex-shrink: 0;
         }
-        .stat-bar-bg {
+        .stat-bar-container {
             flex: 1;
-            background: rgba(0,0,0,0);
+            position: relative;
             height: 16px;
+        }
+        .stat-bar-bg {
+            background: rgba(255,255,255,0.1);
+            height: 100%;
             border-radius: 2px;
             overflow: hidden;
             position: relative;
+            z-index: 1;
+        }
+        .stat-bar-grid {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+        }
+        .grid-line {
+            width: 1px;
+            height: 100%;
+            background: rgba(255,255,255,0.1);
         }
         .stat-bar-fill {
             height: 100%;
@@ -642,6 +692,7 @@
             color: #fff;
             flex-shrink: 0;
             font-weight: 500;
+            padding-left: 5px;
         }
 
     </style>
@@ -651,7 +702,7 @@
 <button id="hamburger-btn">☰</button>
 <div id="side-menu">
     <h1 id="menu-title">生成形オクトミノ</h1>
-    <button id="help-menu-btn" class="menu-item-btn"><span>?</span>業務内容 (ヘルプ)</button>
+    <button id="help-menu-btn" class="menu-item-btn"><span>?</span>ヘルプ</button>
     <button id="zukan-menu-btn" class="menu-item-btn"><span>📖</span>図鑑</button>
     <button id="stats-menu-btn" class="menu-item-btn"><span>📊</span>統計</button>
     <button id="clear-menu-btn" class="menu-item-btn"><span>🗑️</span>盤面全削除</button>
@@ -678,14 +729,14 @@
         <h2 style="text-align: center; margin-bottom: 20px;">業務内容</h2>
         
         <h3 style="border-bottom: 1px solid #546E7A; padding-bottom: 5px; margin-bottom: 10px;">目的</h3>
-        <p style="margin-bottom: 20px;">全種類のオクトミノを作ってください</p>
+        <p style="margin-bottom: 20px;">全種類のオクトミノ、およびノノミノを作ってください</p>
 
         <h3 style="border-bottom: 1px solid #546E7A; padding-bottom: 5px; margin-bottom: 10px;">業務内容</h3>
         <ul style="line-height: 1.8; padding-left: 20px; font-weight: 300; margin-bottom: 20px;">
-            <li>小さなミノを出現させてオクトミノを作ってください</li>
-            <li>ミノの塊がオクトミノになると光ります</li>
-            <li>作ったオクトミノを報告し図鑑に登録しましょう</li>
-            <li>報告の報酬でモノミノを供給します（ストック上限8個）</li>
+            <li>小さなミノを出現させてポリオミノを作ってください</li>
+            <li>ミノの塊が8個(オクトミノ)または9個(ノノミノ)になると光ります</li>
+            <li>光った塊を報告し図鑑に登録しましょう</li>
+            <li>報告の報酬でモノミノを供給します（ストック上限9個）</li>
         </ul>
         
         <h3 style="border-bottom: 1px solid #546E7A; padding-bottom: 5px; margin-bottom: 10px;">操作方法</h3>
@@ -693,7 +744,7 @@
             <li>ダブルクリック：ミノを3つ出現</li>
             <li>ドラッグ：ミノの移動</li>
             <li>マウスホイール：ミノの回転</li>
-            <li>塊を右クリック：オクトミノを報告</li>
+            <li>塊を右クリック：ポリオミノを報告</li>
         </ul>
 
         <button class="modal-ui-btn" style="background:#00ACC1; margin-top:30px; width:100%; display:block; text-align:center;" id="help-close">閉じる</button>
@@ -703,13 +754,32 @@
 <div id="zukan-modal" class="modal-overlay">
     <div class="zukan-content">
         <div class="zukan-header">
-            <h2 style="margin:0;">オクトミノ図鑑 <span id="zukan-count" style="font-size:0.8em; color:#b0bec5;">Generating...</span></h2>
+            <h2 style="margin:0;">ポリオミノ図鑑 <span id="zukan-count" style="font-size:0.8em; color:#b0bec5;">Generating...</span></h2>
             <button class="modal-close-btn" id="zukan-close">✕</button>
         </div>
         
+        <div id="category-description">All Items</div>
+
         <div class="zukan-tabs">
-            <button class="tab-btn active" data-tab="all">すべて</button>
-            <button class="tab-btn" data-tab="cat1">Size A</button> <button class="tab-btn" data-tab="cat2a">Size B</button> <button class="tab-btn" data-tab="cat2b">Size C</button> <button class="tab-btn" data-tab="cat2c">Size D</button> <button class="tab-btn" data-tab="cat3a">Size E</button> <button class="tab-btn" data-tab="cat3b">Size F</button> </div>
+            <button class="tab-btn active" data-tab="all">All</button>
+            <button class="tab-btn" data-tab="cat8a">8A</button> 
+            <button class="tab-btn" data-tab="cat8b">8B</button> 
+            <button class="tab-btn" data-tab="cat8c">8C</button> 
+            <button class="tab-btn" data-tab="cat8d">8D</button> 
+            <button class="tab-btn" data-tab="cat8e">8E</button> 
+            <button class="tab-btn" data-tab="cat8f">8F</button> 
+            <button class="tab-btn" data-tab="cat9a">9A</button>
+            <button class="tab-btn" data-tab="cat9b">9B</button>
+            <button class="tab-btn" data-tab="cat9c">9C</button>
+            <button class="tab-btn" data-tab="cat9d">9D</button>
+            <button class="tab-btn" data-tab="cat9e">9E</button>
+            <button class="tab-btn" data-tab="cat9f">9F</button>
+            <button class="tab-btn" data-tab="cat9g">9G</button>
+            <button class="tab-btn" data-tab="cat9h">9H</button>
+            <button class="tab-btn" data-tab="cat9i">9I</button>
+            <button class="tab-btn" data-tab="cat9j">9J</button>
+            <button class="tab-btn" data-tab="cat9k">9K</button>
+        </div>
 
         <div class="zukan-scroll-area">
             <div class="zukan-grid" id="zukan-list">
@@ -719,18 +789,16 @@
 </div>
 
 <div id="stats-modal" class="modal-overlay">
-    <div class="settings-content" style="width: 600px; max-width:95%;">
-        <h2>プレイ統計</h2>
-        <div style="margin-bottom: 20px;">
-            <span style="font-size:14px; color:#B0BEC5;">総オクトミノ提出回数</span><br>
-            <span id="stats-total-count" style="font-size:32px; font-weight:500;">0</span>
-        </div>
+    <div class="settings-content" style="width: 600px; max-width:95%; position: relative; padding-top: 40px;">
+        <button class="modal-close-btn" id="stats-close-x" style="position: absolute; top: 10px; right: 10px;">✕</button>
         
-        <h3 style="font-size:16px; margin-bottom:10px; border-bottom:1px solid #455A64; padding-bottom:5px;">素材使用内訳</h3>
-        <div id="stats-bars-container" style="display:flex; flex-direction:column; gap:1px; max-height:400px; overflow-y:auto; padding-right:10px;">
+        <h2 style="margin-top:0; margin-bottom: 20px;">プレイ統計</h2>
+        
+        <div id="stats-summary-container"></div>
+        
+        <h3 style="font-size:14px; margin-bottom:10px; border-bottom:1px solid #455A64; padding-bottom:5px; margin-top: 15px;">素材使用内訳</h3>
+        <div id="stats-bars-container" style="display:flex; flex-direction:column; gap:4px; max-height:400px; overflow-y:auto; padding-right:10px;">
             </div>
-
-        <button class="modal-ui-btn" style="background:#546E7A; margin-top:20px; width:100%;" id="stats-close">閉じる</button>
     </div>
 </div>
 
@@ -749,7 +817,6 @@
         <div style="border-top: 1px solid #455A64; margin-top: 20px; padding-top: 10px;">
             <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #E57373;">リセット</h3>
             <div style="display: flex; flex-direction: column; gap: 8px;">
-                <button id="reset-collection-btn" class="danger-btn" style="margin-top:0;">図鑑の発見状況</button>
                 <button id="reset-counts-btn" class="danger-btn" style="margin-top:0;">作成回数</button>
                 <button id="reset-stats-btn" class="danger-btn" style="margin-top:0;">統計データ</button>
             </div>
@@ -776,7 +843,7 @@
         <button class="detail-close-x" id="detail-close-x">✕</button>
         
         <div class="detail-header">
-            <h3>オクトミノ詳細</h3>
+            <h3>詳細</h3>
             <p id="detail-number" class="detail-number">No.---</p>
             <div class="detail-info-row">
                 <span id="detail-date">Latest Crafted: ---</span>
@@ -936,6 +1003,19 @@ const normalizeShape = (points) => {
     }
     variants.sort();
     return variants[0];
+};
+
+const has2x2Block = (id) => {
+    const points = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
+    const has = (x, y) => points.some(p => p.x === x && p.y === y);
+    
+    for (let p of points) {
+        // 自分を左上として、右、下、右下があるか確認
+        if (has(p.x+1, p.y) && has(p.x, p.y+1) && has(p.x+1, p.y+1)) {
+            return true;
+        }
+    }
+    return false;
 };
 
 const adjustOrientationForDisplay = (points) => {
@@ -1101,6 +1181,7 @@ class Zukan {
 
         this.container = document.getElementById('zukan-list');
         this.countLabel = document.getElementById('zukan-count');
+        this.descLabel = document.getElementById('category-description');
         
         this.modal = document.getElementById('zukan-modal');
         this.settingsModal = document.getElementById('settings-modal');
@@ -1132,13 +1213,11 @@ class Zukan {
         document.getElementById('settings-menu-btn').addEventListener('click', () => this.openSettings());
         document.getElementById('settings-close').addEventListener('click', () => this.closeSettings());
         
-        // ★修正: リセットボタンのイベントリスナー分離
-        document.getElementById('reset-collection-btn').addEventListener('click', () => this.resetCollection());
         document.getElementById('reset-counts-btn').addEventListener('click', () => this.resetCounts());
         document.getElementById('reset-stats-btn').addEventListener('click', () => this.resetStats());
 
         document.getElementById('stats-menu-btn').addEventListener('click', () => this.openStats());
-        document.getElementById('stats-close').addEventListener('click', () => this.closeStats());
+        document.getElementById('stats-close-x').addEventListener('click', () => this.closeStats());
         
         document.getElementById('detail-close-x').addEventListener('click', () => this.detailModal.classList.remove('active'));
 
@@ -1165,30 +1244,101 @@ class Zukan {
     closeStats() { this.statsModal.classList.remove('active'); }
 
     buildStatsUI() {
-        document.getElementById('stats-total-count').textContent = this.totalReports;
+        let octoCount = 0;
+        let nonoCount = 0;
+        
+        this.counts.forEach((val, id) => {
+            const points = id.split(';');
+            if (points.length === 8) octoCount += val;
+            else if (points.length === 9) nonoCount += val;
+        });
+
+        const summaryContainer = document.getElementById('stats-summary-container');
+        summaryContainer.innerHTML = `
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; text-align:center; margin-bottom:15px;">
+                <div>
+                    <div style="font-size:12px; color:#B0BEC5">Total</div>
+                    <div style="font-size:24px; font-weight:500">${this.totalReports}</div>
+                </div>
+                <div>
+                    <div style="font-size:12px; color:#4FC3F7">Octomino</div>
+                    <div style="font-size:24px; font-weight:500">${octoCount}</div>
+                </div>
+                <div>
+                    <div style="font-size:12px; color:#F06292">Nonomino</div>
+                    <div style="font-size:24px; font-weight:500">${nonoCount}</div>
+                </div>
+            </div>
+        `;
         
         const container = document.getElementById('stats-bars-container');
         container.innerHTML = '';
 
-        const maxVal = Math.max(...this.materialCounts, 1);
+        let maxVal = Math.max(...this.materialCounts, 1);
+        
+        let scaleMax = maxVal;
+        const digits = Math.floor(Math.log10(maxVal));
+        const p = Math.pow(10, digits);
+        const lead = maxVal / p;
+        
+        if (lead <= 1) scaleMax = 1 * p;       
+        else if (lead <= 2) scaleMax = 2 * p;  
+        else if (lead <= 5) scaleMax = 5 * p;  
+        else scaleMax = 10 * p;
+        
+        if (scaleMax < maxVal) {
+            if (lead > 5) scaleMax = 10 * p;
+            else if (lead > 2) scaleMax = 5 * p;
+            else scaleMax = 2 * p;
+        }
+        
+        const gridLines = [];
+        for (let i = 1; i < 4; i++) {
+            gridLines.push(i * 25);
+        }
 
         SHAPE_NAMES.forEach((name, i) => {
             const count = this.materialCounts[i];
-            const percent = (count / maxVal) * 100;
+            const percent = (count / scaleMax) * 100;
             const color = SHAPE_COLORS[i];
 
             const row = document.createElement('div');
             row.className = 'stat-bar-row';
             
+            let grids = '';
+            gridLines.forEach(pos => {
+                grids += `<div class="grid-line" style="left:${pos}%"></div>`;
+            });
+
             row.innerHTML = `
                 <div class="stat-label" style="color: ${color}; font-weight: 700;">${name}</div>
-                <div class="stat-bar-bg">
-                    <div class="stat-bar-fill" style="width: ${percent}%; background-color: ${color};"></div>
+                <div class="stat-bar-container">
+                    <div class="stat-bar-bg">
+                        <div class="stat-bar-grid">${grids}</div>
+                        <div class="stat-bar-fill" style="width: ${percent}%; background-color: ${color};"></div>
+                    </div>
                 </div>
                 <div class="stat-val">${count}</div>
             `;
             container.appendChild(row);
         });
+        
+        const axisRow = document.createElement('div');
+        axisRow.style.display = 'flex';
+        axisRow.style.paddingLeft = '30px'; 
+        axisRow.style.paddingRight = '40px'; 
+        axisRow.style.fontSize = '10px';
+        axisRow.style.color = '#546E7A';
+        axisRow.style.justifyContent = 'space-between';
+        
+        [0, 0.25, 0.5, 0.75, 1].forEach(r => {
+            const span = document.createElement('span');
+            span.textContent = Math.round(scaleMax * r);
+            span.style.width = '20px';
+            span.style.textAlign = 'center';
+            axisRow.appendChild(span);
+        });
+        container.appendChild(axisRow);
     }
 
     save() {
@@ -1257,25 +1407,9 @@ class Zukan {
         } catch(e) { console.error(e); }
     }
 
-    // ★追加: 個別リセットメソッド
-    resetCollection() {
-        showCustomConfirm("図鑑の発見状況をリセットしますか？\n(作成回数や統計は維持されます)", () => {
-            this.collected.clear();
-            this.timestamps.clear();
-            this.viewed.clear();
-            localStorage.removeItem('octomino_zukan_collection');
-            localStorage.removeItem('octomino_zukan_timestamps');
-            localStorage.removeItem('octomino_zukan_viewed');
-            this.closeSettings();
-            this.buildUI();
-            this.showResetToast();
-        });
-    }
-
     resetCounts() {
         showCustomConfirm("作成回数カウントをリセットしますか？\n(発見状況は維持されます)", () => {
             this.counts.clear();
-            // 空のオブジェクトを保存することで、次回ロード時の「移行措置」を回避
             localStorage.setItem('octomino_zukan_counts', '{}');
             this.closeSettings();
             this.buildUI();
@@ -1303,7 +1437,10 @@ class Zukan {
 
     generateAllOctominoes() {
         let currentShapes = [ [{x:0,y:0}] ];
-        for(let n=2; n<=8; n++) {
+        let collectedShapes = [];
+
+        // 2から9までループ
+        for(let n=2; n<=9; n++) {
             const nextShapesSet = new Set();
             const nextShapes = [];
             for(let shape of currentShapes) {
@@ -1324,21 +1461,52 @@ class Zukan {
                 }
             }
             currentShapes = nextShapes;
+            
+            if (n === 8 || n === 9) {
+                collectedShapes = collectedShapes.concat(currentShapes);
+            }
         }
-        let ids = currentShapes.map(s => normalizeShape(s));
+        
+        let ids = collectedShapes.map(s => normalizeShape(s));
         
         ids.sort((a, b) => {
             const getCat = (id) => {
+                const points = id.split(';');
+                const len = points.length;
                 const s = getShortSideLength(id);
                 const l = getLongSideLength(id);
-                if(s <= 2) return 1;
-                if(s === 3) {
-                    if(l <= 4) return 2;
-                    if(l === 5) return 3;
-                    return 4; // l >= 6
+
+                if (len === 8) {
+                    if(s <= 2) return 1; // 8A
+                    if(s === 3) {
+                        if(l <= 4) return 2; // 8B
+                        if(l === 5) return 3; // 8C
+                        return 4; // 8D
+                    }
+                    if(l === 4) return 5; // 8E
+                    return 6; // 8F
+                } else {
+                    // len === 9
+                    if (s <= 2) return 10; // 9A
+                    if (s === 3) {
+                        if (l <= 4) return 11; // 9B
+                        if (l === 5) return 12; // 9C
+                        if (l === 6) {
+                            if (has2x2Block(id)) return 13; // 9D
+                            return 14; // 9E
+                        }
+                        return 15; // 9F (l>=7)
+                    }
+                    if (s === 4) {
+                        if (l === 4) return 16; // 9G
+                        if (l === 5) {
+                            if (has2x2Block(id)) return 17; // 9H
+                            return 18; // 9I
+                        }
+                        return 19; // 9J (l>=6)
+                    }
+                    return 20; // 9K (s >= 5)
                 }
-                if(l === 4) return 5;
-                return 6; // l >= 5
             };
             
             const catA = getCat(a);
@@ -1359,20 +1527,81 @@ class Zukan {
         const dpr = window.devicePixelRatio || 1;
         const itemW = 160; 
         const itemH = 120; 
+        
+        const catDescriptions = {
+            'all': "すべて",
+            'cat8a': "短辺2-",
+            'cat8b': "短辺3×長辺4-",
+            'cat8c': "短辺3×長辺5",
+            'cat8d': "短辺3×長辺6+",
+            'cat8e': "短辺4×長辺4",
+            'cat8f': "短辺4×長辺5+",
+            
+            'cat9a': "短辺2-",
+            'cat9b': "短辺3×長辺4-",
+            'cat9c': "短辺3×長辺5",
+            'cat9d': "短辺3×長辺6 / 2×2の塊を含む",
+            'cat9e': "短辺3×長辺6 / 2×2の塊を含まない",
+            'cat9f': "短辺3×長辺7+",
+            'cat9g': "短辺4×長辺4",
+            'cat9h': "短辺4×長辺5 / 2×2の塊を含む",
+            'cat9i': "短辺4×長辺5 / 2×2の塊を含まない",
+            'cat9j': "短辺4×長辺6+", 
+            'cat9k': "短辺5+"
+        };
+        
+        this.descLabel.textContent = catDescriptions[this.currentTab] || "";
+        
+        if (this.currentTab.startsWith('cat8')) {
+            this.descLabel.style.borderLeftColor = '#00ACC1'; 
+        } else if (this.currentTab.startsWith('cat9')) {
+            this.descLabel.style.borderLeftColor = '#EC407A'; 
+        } else {
+            this.descLabel.style.borderLeftColor = '#546E7A'; 
+        }
 
         const visibleIds = this.allIds.filter(id => {
+            const points = id.split(';');
+            const length = points.length;
+            
+            let cat = '';
             const s = getShortSideLength(id);
             const l = getLongSideLength(id);
-            let cat = '';
-            if(s <= 2) cat = 'cat1';
-            else if(s === 3) {
-                if(l <= 4) cat = 'cat2a';
-                else if(l === 5) cat = 'cat2b';
-                else cat = 'cat2c';
-            }
-            else { // s >= 4
-                if(l === 4) cat = 'cat3a';
-                else cat = 'cat3b';
+
+            if (length === 8) {
+                if(s <= 2) cat = 'cat8a';
+                else if(s === 3) {
+                    if(l <= 4) cat = 'cat8b';
+                    else if(l === 5) cat = 'cat8c';
+                    else cat = 'cat8d';
+                }
+                else { 
+                    if(l === 4) cat = 'cat8e';
+                    else cat = 'cat8f';
+                }
+            } else if (length === 9) {
+                if (s <= 2) cat = 'cat9a';
+                else if (s === 3) {
+                    if (l <= 4) cat = 'cat9b';
+                    else if (l === 5) cat = 'cat9c';
+                    else if (l === 6) {
+                        if (has2x2Block(id)) cat = 'cat9d';
+                        else cat = 'cat9e';
+                    } else {
+                        cat = 'cat9f';
+                    }
+                }
+                else if (s === 4) {
+                    if (l === 4) cat = 'cat9g'; 
+                    else if (l === 5) {
+                        if (has2x2Block(id)) cat = 'cat9h';
+                        else cat = 'cat9i';
+                    } else {
+                        cat = 'cat9j'; 
+                    }
+                } else {
+                    cat = 'cat9k';
+                }
             }
 
             if (this.currentTab === 'all') return true;
@@ -1391,6 +1620,16 @@ class Zukan {
             numSpan.textContent = `#${globalIndex + 1}`;
             div.appendChild(numSpan);
             
+            const pointsArr = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
+            const length = pointsArr.length;
+            
+            const countSpan = document.createElement('span');
+            countSpan.className = 'block-count';
+            countSpan.textContent = length;
+            countSpan.style.color = (length === 9) ? '#E1BEE7' : '#B3E5FC';
+            
+            div.appendChild(countSpan);
+
             if (isDiscovered && !this.viewed.has(id)) {
                 const badge = document.createElement('span');
                 badge.className = 'new-badge';
@@ -1400,10 +1639,10 @@ class Zukan {
             
             if (isDiscovered) {
                 const count = this.counts.get(id) || 1;
-                const countSpan = document.createElement('span');
-                countSpan.className = 'count-badge';
-                countSpan.textContent = `${count}`;
-                div.appendChild(countSpan);
+                const countBadge = document.createElement('span');
+                countBadge.className = 'count-badge';
+                countBadge.textContent = `×${count}`;
+                div.appendChild(countBadge);
             }
             
             div.onclick = () => {
@@ -1424,7 +1663,10 @@ class Zukan {
                 let points = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
                 points = adjustOrientationForDisplay(points);
                 ctx.scale(dpr, dpr);
-                drawZukanPolyomino(ctx, points, itemW, itemH);
+                
+                const fillColor = length === 9 ? '#E1BEE7' : '#B3E5FC'; 
+                
+                drawZukanPolyomino(ctx, points, itemW, itemH, fillColor);
             }
         });
         this.updateCount();
@@ -1443,6 +1685,7 @@ class Zukan {
         }
 
         let points = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
+        const length = points.length;
         points = adjustOrientationForDisplay(points);
         
         const dpr = window.devicePixelRatio || 1;
@@ -1466,13 +1709,15 @@ class Zukan {
 
         const count = this.counts.get(id) || 0;
         this.detailCount.textContent = `Total: ${count}`;
-
-        drawZukanPolyomino(ctx, points, cssW, cssH);
+        
+        const fillColor = length === 9 ? '#E1BEE7' : '#B3E5FC';
+        drawZukanPolyomino(ctx, points, cssW, cssH, fillColor);
+        
         this.detailModal.classList.add('active');
     }
 
     register(blocks, consumedTypeIds) {
-        if(blocks.length !== 8) return false;
+        if(blocks.length !== 8 && blocks.length !== 9) return false;
         
         const id = normalizeShape(blocks);
         if(!this.allIds.includes(id)) return {isNew: false, id: id, index: -1};
@@ -1503,7 +1748,7 @@ class Zukan {
         this.unlockItem(id);
         this.updateCount();
         
-        return {isNew: isNew, id: id, index: index};
+        return {isNew: isNew, id: id, index: index, length: blocks.length};
     }
 
     unlockItem(id) {
@@ -1521,11 +1766,12 @@ class Zukan {
                 div.appendChild(countSpan);
             }
             const count = this.counts.get(id) || 1;
-            countSpan.textContent = `${count}`;
+            countSpan.textContent = `×${count}`;
 
             const canvas = div.querySelector('canvas');
             const ctx = canvas.getContext('2d');
             let points = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
+            const length = points.length;
             
             points = adjustOrientationForDisplay(points);
             
@@ -1536,7 +1782,9 @@ class Zukan {
             ctx.resetTransform();
             ctx.scale(dpr, dpr);
             
-            drawZukanPolyomino(ctx, points, logicalW, logicalH);
+            const fillColor = length === 9 ? '#E1BEE7' : '#B3E5FC';
+            
+            drawZukanPolyomino(ctx, points, logicalW, logicalH, fillColor);
 
             if (!this.viewed.has(id) && !div.querySelector('.new-badge')) {
                 const badge = document.createElement('span');
@@ -1834,7 +2082,7 @@ class Game {
         this.smallPatternBag = []; 
 
         this.monominoStock = 0;
-        this.maxMonominoStock = 8;
+        this.maxMonominoStock = 9; // ストック上限を9に変更
 
         this.dpr = window.devicePixelRatio || 1;
         this.width = window.innerWidth;
@@ -2184,7 +2432,8 @@ class Game {
                 });
             }
 
-            if (totalBlocks === 8) {
+            // 8個または9個の塊なら光らせる
+            if (totalBlocks === 8 || totalBlocks === 9) {
                 cluster.forEach(cp => {
                     const cx = Math.round(cp.x / GRID_SIZE);
                     const cy = Math.round(cp.y / GRID_SIZE);
@@ -2218,15 +2467,20 @@ class Game {
         const num = result.index + 1;
 
         if (result.index === -1) {
-            this.showToast("Unknown Shape", false);
+            this.showToast("Unknown Shape", 'existing');
         } else {
+            const isOctomino = (result.length === 8);
+            const typeName = isOctomino ? "オクトミノ" : "ノノミノ";
+            
             if (result.isNew) {
-                this.showToast(`オクトミノ#${num}を登録しました`, true);
+                const toastType = isOctomino ? 'new-octo' : 'new-nono';
+                this.showToast(`${typeName}#${num}を登録しました`, toastType);
                 this.sound.playNewDiscovery(); 
             } else {
-                this.showToast(`オクトミノ#${num}はすでに登録されています`, false);
+                this.showToast(`${typeName}#${num}はすでに登録されています`, 'existing');
                 this.sound.playAlreadyKnown(); 
             }
+            // 供給は1つ
             this.addMonominoStock(1);
         }
 
@@ -2235,11 +2489,10 @@ class Game {
         });
         
         this.checkClusters();
-        this.saveGame(); // ★保存 (ストック増加、削除状態の記録)
+        this.saveGame(); 
     }
 
-    // ★修正: トーストの表示処理を修正
-    showToast(msg, isNew) {
+    showToast(msg, type) {
         const toast = document.getElementById('toast');
         if (this.toastTimer) clearTimeout(this.toastTimer);
         
@@ -2247,14 +2500,11 @@ class Game {
         void toast.offsetWidth; // リフロー強制
 
         toast.textContent = msg;
-        toast.className = isNew ? 'show' : 'show existing';
+        // type: 'existing', 'new-octo', 'new-nono'
+        toast.className = `show ${type}`;
         
         this.toastTimer = setTimeout(() => {
             toast.classList.remove('show');
-            // フェードアウト(0.3s)を待ってからexistingを外すことでちらつきを防止
-            setTimeout(() => {
-                toast.classList.remove('existing');
-            }, 300);
         }, 2000);
     }
 
