@@ -49,7 +49,8 @@
             left: 25px;
             width: 50px;
             height: 50px;
-            background: rgba(33, 33, 33, 0.6);
+            /* 背景を透明に変更 */
+            background: transparent;
             border: none;
             border-radius: 4px;
             color: #fff;
@@ -62,7 +63,8 @@
             pointer-events: auto;
             transition: background 0.2s;
         }
-        #hamburger-btn:hover { background: rgba(55, 71, 79, 0.8); }
+        /* ホバー時は少し背景を出す */
+        #hamburger-btn:hover { background: rgba(55, 71, 79, 0.5); }
 
         /* サイドメニュー本体 */
         #side-menu {
@@ -173,20 +175,11 @@
         .action-circle-btn:active { transform: scale(0.95); }
         .action-circle-btn:hover { transform: scale(1.05); }
 
-        /* 個別ボタンスタイル */
-        #clear-all-btn {
-            background: #D32F2F;
-            font-size: 11px;
-        }
-        #clear-all-btn span { font-size: 20px; margin-bottom: 2px; }
-        #clear-all-btn:hover { background: #F44336; }
-
         #monomino-btn {
             background: #FFB300;
             color: #263238;
             font-size: 11px;
         }
-        /* 四角いアイコン */
         #monomino-btn span.icon { font-size: 16px; margin-bottom: 4px; }
         #monomino-btn:hover:not(:disabled) { background: #FFCA28; }
         #monomino-btn:disabled {
@@ -222,7 +215,6 @@
         #zukan-btn span { font-size: 20px; margin-bottom: 2px; }
         #zukan-btn:hover { background: #00BCD4; }
 
-
         /* トースト通知 */
         #toast {
             position: absolute;
@@ -234,7 +226,7 @@
             padding: 15px 40px;
             border-radius: 4px;
             font-size: 24px; 
-            font-weight: 300;
+            font-weight: 500;
             font-family: 'Noto Sans JP', sans-serif;
             box-shadow: 0 5px 20px rgba(0,0,0,0.5);
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
@@ -244,8 +236,6 @@
             z-index: 100;
             white-space: nowrap;
             letter-spacing: 0.05em;
-            
-            /* サイズ統一 */
             min-width: 500px;
             text-align: center;
         }
@@ -291,22 +281,23 @@
         }
         .zukan-header h2 {
             font-family: 'Noto Sans JP', sans-serif;
-            font-weight: 300;
+            font-weight: 700;
             letter-spacing: 0.05em;
             margin: 0;
         }
         
-        /* タブエリア (Gridで均等配置) */
+        /* タブエリア */
         .zukan-tabs {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr); /* 7つのタブ */
-            gap: 2px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
             margin-bottom: 0; 
             padding-left: 0;
             position: relative;
             top: 1px; 
             z-index: 5;
             width: 100%;
+            justify-content: flex-start;
         }
         .tab-btn {
             background: #37474F;
@@ -322,9 +313,8 @@
             transition: all 0.2s;
             position: relative;
             text-align: center;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            width: 100px;
+            flex: 0 0 auto;
         }
         .tab-btn:hover { background: #455A64; color: #fff; }
         .tab-btn.active {
@@ -354,7 +344,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0;
+            padding-bottom: 4px; 
+            padding-right: 0;
+            padding-left: 0;
+            padding-top: 0;
         }
         .modal-close-btn:hover { background: #ef5350; }
         
@@ -428,33 +421,40 @@
             z-index: 5;
             pointer-events: none;
         }
+
+        .zukan-item .count-badge {
+            position: absolute;
+            bottom: 4px;
+            left: auto;
+            right: 6px; /* 右下 */
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.8);
+            z-index: 5;
+            pointer-events: none;
+        }
         
         .zukan-item .new-badge {
             position: absolute;
-            bottom: 4px;
+            top: 4px;
             right: 4px;
+            bottom: auto;
             background: #F50057;
             color: white;
             font-size: 10px;
             font-weight: 700;
-            padding: 2px 6px;
+            padding: 1px 6px 3px 6px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            box-shadow: none;
             z-index: 6;
             pointer-events: none;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
         }
 
         .zukan-scroll-area::-webkit-scrollbar { width: 12px; height: 12px; }
         .zukan-scroll-area::-webkit-scrollbar-track { background: #102027; }
         .zukan-scroll-area::-webkit-scrollbar-thumb { background: #546E7A; border-radius: 6px; border: 2px solid #102027; }
 
-        /* 設定・ヘルプモーダル・確認モーダル共通 */
+        /* 設定・ヘルプモーダル・統計モーダル共通 */
         .settings-content {
             background: #263238;
             padding: 30px;
@@ -546,7 +546,7 @@
         }
         .detail-content {
             background: #263238;
-            padding: 30px;
+            padding: 20px 30px 30px 30px;
             border-radius: 4px;
             border: 2px solid #90A4AE;
             box-shadow: 0 0 50px rgba(255,255,255, 0.1);
@@ -554,31 +554,38 @@
             color: #fff;
             width: 800px;
             max-width: 95%;
+            position: relative;
         }
-        .detail-header { margin-bottom: 20px; }
+        .detail-header { margin-bottom: 10px; }
         .detail-header h3 {
             font-family: 'Noto Sans JP', sans-serif;
             font-weight: 300;
-            font-size: 24px;
+            font-size: 18px;
+            margin: 0;
+            color: #90A4AE;
         }
         .detail-number {
             font-size: 28px;
             color: #CFD8DC;
             font-weight: 300;
-            margin: 0;
+            margin: 0 0 10px 0;
             font-family: 'Noto Sans JP', sans-serif;
         }
-        .detail-date {
-            font-size: 14px;
+        .detail-info-row {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 18px; 
             color: #B0BEC5;
-            margin-top: 5px;
             font-family: 'Noto Sans JP', sans-serif;
+            margin-bottom: 10px;
+            font-weight: 500;
         }
         .detail-canvas-container {
-            width: 480px; 
-            height: 360px;
+            width: 640px; 
+            height: 480px;
             background: #102027;
-            margin: 0 auto 20px auto;
+            margin: 0 auto 0 auto; 
             border-radius: 4px;
             display: flex;
             align-items: center;
@@ -586,18 +593,56 @@
             border: 1px solid #455A64;
         }
         .detail-canvas-container canvas { width: 100%; height: 100%; }
-        .detail-close {
-            background: #607D8B;
+        
+        .detail-close-x {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: transparent;
             border: none;
-            color: white;
-            padding: 8px 24px;
-            border-radius: 2px;
-            cursor: pointer;
+            color: #90A4AE;
+            font-size: 32px;
             font-weight: 300;
-            font-size: 16px;
-            font-family: 'Noto Sans JP', sans-serif;
+            cursor: pointer;
+            z-index: 10;
+            line-height: 1;
+            padding: 0;
         }
-        .detail-close:hover { background: #78909C; }
+        .detail-close-x:hover { color: #fff; }
+
+        /* 統計モーダルのグラフ用 */
+        .stat-bar-row {
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+            gap: 10px;
+            margin-bottom: 0;
+        }
+        .stat-label {
+            width: 30px; 
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .stat-bar-bg {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            height: 16px;
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+        .stat-bar-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease-out;
+        }
+        .stat-val {
+            width: 40px;
+            text-align: left;
+            color: #fff;
+            flex-shrink: 0;
+            font-weight: 500;
+        }
 
     </style>
 </head>
@@ -608,6 +653,7 @@
     <h1 id="menu-title">生成形オクトミノ</h1>
     <button id="help-menu-btn" class="menu-item-btn"><span>?</span>業務内容 (ヘルプ)</button>
     <button id="zukan-menu-btn" class="menu-item-btn"><span>📖</span>図鑑</button>
+    <button id="stats-menu-btn" class="menu-item-btn"><span>📊</span>統計</button>
     <button id="clear-menu-btn" class="menu-item-btn"><span>🗑️</span>盤面全削除</button>
     <button id="settings-menu-btn" class="menu-item-btn"><span>⚙</span>設定</button>
 </div>
@@ -615,10 +661,6 @@
 <div id="clock-display">00:00</div>
 
 <div id="bottom-right-actions">
-    <button id="clear-all-btn" class="action-circle-btn">
-        <span>🗑️</span>全削除
-    </button>
-    
     <button id="monomino-btn" class="action-circle-btn" disabled>
         <div class="stock-badge" id="monomino-stock">0</div>
         <span class="icon">■</span>召喚
@@ -634,22 +676,25 @@
 <div id="help-modal" class="modal-overlay">
     <div class="settings-content" style="width: 600px; max-width: 90%; text-align: left;">
         <h2 style="text-align: center; margin-bottom: 20px;">業務内容</h2>
-        <p style="text-align: center; margin-bottom: 30px; font-weight: 500; line-height: 1.6; font-size: 18px;">
-            小さなミノを組み合わせ<br>すべての種類のオクトミノを報告してください。
-        </p>
         
-        <h3 style="border-bottom: 1px solid #546E7A; padding-bottom: 5px; margin-bottom: 10px;">基本操作</h3>
-        <ul style="line-height: 2.2; padding-left: 20px; font-weight: 300;">
-            <li>空白をダブルクリック : <span style="color:#00ACC1; font-weight:500;">ミノ生成 (3個)</span></li>
-            <li>左ドラッグ : <span style="color:#00ACC1; font-weight:500;">ミノの移動</span></li>
-            <li>マウスホイール : <span style="color:#00ACC1; font-weight:500;">ミノの回転</span></li>
-            <li>塊を右クリック : <span style="color:#FF4081; font-weight:500;">報告(登録) & 回収</span></li>
-        </ul>
+        <h3 style="border-bottom: 1px solid #546E7A; padding-bottom: 5px; margin-bottom: 10px;">目的</h3>
+        <p style="margin-bottom: 20px;">全種類のオクトミノを作ってください</p>
 
-        <h3 style="border-bottom: 1px solid #546E7A; padding-bottom: 5px; margin-bottom: 10px; margin-top:20px;">モノミノ召喚</h3>
-        <p style="font-size:14px; color:#B0BEC5;">
-            オクトミノを報告(回収)するごとに「モノミノ(1マス)」を召喚する権利が得られます。(最大8個)
-        </p>
+        <h3 style="border-bottom: 1px solid #546E7A; padding-bottom: 5px; margin-bottom: 10px;">業務内容</h3>
+        <ul style="line-height: 1.8; padding-left: 20px; font-weight: 300; margin-bottom: 20px;">
+            <li>小さなミノを出現させてオクトミノを作ってください</li>
+            <li>ミノの塊がオクトミノになると光ります</li>
+            <li>作ったオクトミノを報告し図鑑に登録しましょう</li>
+            <li>報告の報酬でモノミノを供給します（ストック上限8個）</li>
+        </ul>
+        
+        <h3 style="border-bottom: 1px solid #546E7A; padding-bottom: 5px; margin-bottom: 10px;">操作方法</h3>
+        <ul style="line-height: 1.8; padding-left: 20px; font-weight: 300;">
+            <li>ダブルクリック：ミノを3つ出現</li>
+            <li>ドラッグ：ミノの移動</li>
+            <li>マウスホイール：ミノの回転</li>
+            <li>塊を右クリック：オクトミノを報告</li>
+        </ul>
 
         <button class="modal-ui-btn" style="background:#00ACC1; margin-top:30px; width:100%; display:block; text-align:center;" id="help-close">閉じる</button>
     </div>
@@ -673,6 +718,22 @@
     </div>
 </div>
 
+<div id="stats-modal" class="modal-overlay">
+    <div class="settings-content" style="width: 600px; max-width:95%;">
+        <h2>プレイ統計</h2>
+        <div style="margin-bottom: 20px;">
+            <span style="font-size:14px; color:#B0BEC5;">総オクトミノ提出回数</span><br>
+            <span id="stats-total-count" style="font-size:32px; font-weight:500;">0</span>
+        </div>
+        
+        <h3 style="font-size:16px; margin-bottom:10px; border-bottom:1px solid #455A64; padding-bottom:5px;">素材使用内訳</h3>
+        <div id="stats-bars-container" style="display:flex; flex-direction:column; gap:1px; max-height:400px; overflow-y:auto; padding-right:10px;">
+            </div>
+
+        <button class="modal-ui-btn" style="background:#546E7A; margin-top:20px; width:100%;" id="stats-close">閉じる</button>
+    </div>
+</div>
+
 <div id="settings-modal" class="modal-overlay">
     <div class="settings-content">
         <h2 style="margin-top:0;">設定</h2>
@@ -686,7 +747,7 @@
         </div>
 
         <p style="color:#b0bec5; font-size:14px; margin-bottom:20px; border-top:1px solid #455A64; padding-top:20px;">
-            図鑑の登録状況を削除します。<br>
+            図鑑の登録状況と統計を削除します。<br>
             (盤面のブロックは消えません)
         </p>
         <button id="reset-data-btn" class="danger-btn">進捗を削除する</button>
@@ -708,15 +769,20 @@
 
 <div id="detail-modal" class="modal-overlay">
     <div class="detail-content">
+        <button class="detail-close-x" id="detail-close-x">✕</button>
+        
         <div class="detail-header">
-            <h3 style="margin:0 0 5px 0;">オクトミノ詳細</h3>
+            <h3>オクトミノ詳細</h3>
             <p id="detail-number" class="detail-number">No.---</p>
-            <p id="detail-date" class="detail-date">Latest Crafted: ---</p>
+            <div class="detail-info-row">
+                <span id="detail-date">Latest Crafted: ---</span>
+                <span style="border-left: 2px solid #546E7A; margin: 0 10px;"></span>
+                <span id="detail-count">Total: 0</span>
+            </div>
         </div>
         <div class="detail-canvas-container">
             <canvas id="detail-canvas"></canvas>
         </div>
-        <button class="detail-close" onclick="document.getElementById('detail-modal').classList.remove('active')">閉じる</button>
     </div>
 </div>
 
@@ -783,13 +849,12 @@ class SoundSystem {
         osc.start();
         osc.stop(this.ctx.currentTime + 0.1);
     }
-    // ★変更: 新規登録音 (ピッ！ 高音)
+    // 新規登録音
     playNewDiscovery() {
         if (!this.enabled) return;
-        // 短く高い音
         this.playTone('sine', 2000, 4000, 0.1, 0.1); 
     }
-    // 既出 (低い)
+    // 既出
     playAlreadyKnown() {
         if (!this.enabled) return;
         this.playTone('sawtooth', 150, 50, 0.1, 0.05);
@@ -830,6 +895,10 @@ const SHAPES = [
     [[0,0], [1,0], [2,0], [2,1]], // 8: Tetromino J
     [[1,0], [2,0], [0,1], [1,1]], // 9: Tetromino S
     [[0,0], [1,0], [1,1], [2,1]]  // 10: Tetromino Z
+];
+
+const SHAPE_NAMES = [
+    "m", "d", "a", "b", "i", "o", "t", "l", "j", "s", "z"
 ];
 
 // --- 配色ロジック ---
@@ -908,6 +977,19 @@ const getLongSideLength = (id) => {
     const w = maxX - minX + 1;
     const h = maxY - minY + 1;
     return Math.max(w, h);
+};
+
+const rotateShapePoints = (blocks, times) => {
+    let current = JSON.parse(JSON.stringify(blocks));
+    for(let i=0; i<times; i++) {
+        current = current.map(([x, y]) => [-y, x]);
+    }
+    let minX = Infinity, minY = Infinity;
+    current.forEach(([x, y]) => {
+        if(x < minX) minX = x;
+        if(y < minY) minY = y;
+    });
+    return current.map(([x, y]) => [x - minX, y - minY]);
 };
 
 const drawZukanPolyomino = (ctx, blocks, logicalW, logicalH, color = '#CFD8DC', boneColor = 'rgba(0,0,0,0.15)') => {
@@ -1008,15 +1090,23 @@ class Zukan {
         this.collected = new Set();
         this.viewed = new Set();
         this.timestamps = new Map();
+        
+        this.counts = new Map();
+        this.materialCounts = new Array(11).fill(0);
+        this.totalReports = 0;
+
         this.container = document.getElementById('zukan-list');
         this.countLabel = document.getElementById('zukan-count');
         
         this.modal = document.getElementById('zukan-modal');
         this.settingsModal = document.getElementById('settings-modal');
+        this.statsModal = document.getElementById('stats-modal');
+        
         this.detailModal = document.getElementById('detail-modal');
         this.detailCanvas = document.getElementById('detail-canvas');
         this.detailNumber = document.getElementById('detail-number');
         this.detailDate = document.getElementById('detail-date');
+        this.detailCount = document.getElementById('detail-count');
         
         this.currentTab = 'all'; 
         this.tabButtons = document.querySelectorAll('.tab-btn');
@@ -1039,6 +1129,11 @@ class Zukan {
         document.getElementById('settings-close').addEventListener('click', () => this.closeSettings());
         document.getElementById('reset-data-btn').addEventListener('click', () => this.resetData());
 
+        document.getElementById('stats-menu-btn').addEventListener('click', () => this.openStats());
+        document.getElementById('stats-close').addEventListener('click', () => this.closeStats());
+        
+        document.getElementById('detail-close-x').addEventListener('click', () => this.detailModal.classList.remove('active'));
+
         setTimeout(() => this.generateAllOctominoes(), 100);
     }
 
@@ -1047,11 +1142,46 @@ class Zukan {
         document.getElementById('side-menu').classList.remove('active');
     }
     closeZukan() { this.modal.classList.remove('active'); }
+    
     openSettings() { 
         this.settingsModal.classList.add('active'); 
         document.getElementById('side-menu').classList.remove('active');
     }
     closeSettings() { this.settingsModal.classList.remove('active'); }
+
+    openStats() {
+        this.buildStatsUI();
+        this.statsModal.classList.add('active');
+        document.getElementById('side-menu').classList.remove('active');
+    }
+    closeStats() { this.statsModal.classList.remove('active'); }
+
+    buildStatsUI() {
+        document.getElementById('stats-total-count').textContent = this.totalReports;
+        
+        const container = document.getElementById('stats-bars-container');
+        container.innerHTML = '';
+
+        const maxVal = Math.max(...this.materialCounts, 1);
+
+        SHAPE_NAMES.forEach((name, i) => {
+            const count = this.materialCounts[i];
+            const percent = (count / maxVal) * 100;
+            const color = SHAPE_COLORS[i];
+
+            const row = document.createElement('div');
+            row.className = 'stat-bar-row';
+            
+            row.innerHTML = `
+                <div class="stat-label" style="color: ${color}; font-weight: 700;">${name}</div>
+                <div class="stat-bar-bg">
+                    <div class="stat-bar-fill" style="width: ${percent}%; background-color: ${color};"></div>
+                </div>
+                <div class="stat-val">${count}</div>
+            `;
+            container.appendChild(row);
+        });
+    }
 
     save() {
         try {
@@ -1064,6 +1194,14 @@ class Zukan {
 
             const viewedData = JSON.stringify(Array.from(this.viewed));
             localStorage.setItem('octomino_zukan_viewed', viewedData);
+
+            const countsObj = {};
+            this.counts.forEach((val, key) => countsObj[key] = val);
+            localStorage.setItem('octomino_zukan_counts', JSON.stringify(countsObj));
+            
+            localStorage.setItem('octomino_zukan_stats_materials', JSON.stringify(this.materialCounts));
+            localStorage.setItem('octomino_zukan_stats_total', String(this.totalReports));
+
         } catch(e) { console.error(e); }
     }
 
@@ -1086,6 +1224,28 @@ class Zukan {
                 const arr = JSON.parse(viewedData);
                 this.viewed = new Set(arr);
             }
+
+            const countsData = localStorage.getItem('octomino_zukan_counts');
+            if (countsData) {
+                const cObj = JSON.parse(countsData);
+                for (let key in cObj) {
+                    this.counts.set(key, cObj[key]);
+                }
+            } else {
+                this.collected.forEach(id => {
+                    if (!this.counts.has(id)) this.counts.set(id, 1);
+                });
+            }
+
+            const matData = localStorage.getItem('octomino_zukan_stats_materials');
+            if (matData) {
+                this.materialCounts = JSON.parse(matData);
+            }
+            const totalData = localStorage.getItem('octomino_zukan_stats_total');
+            if (totalData) {
+                this.totalReports = parseInt(totalData, 10) || 0;
+            }
+
         } catch(e) { console.error(e); }
     }
 
@@ -1094,9 +1254,17 @@ class Zukan {
             this.collected.clear();
             this.timestamps.clear();
             this.viewed.clear();
+            this.counts.clear();
+            this.materialCounts = new Array(11).fill(0);
+            this.totalReports = 0;
+            
             localStorage.removeItem('octomino_zukan_collection');
             localStorage.removeItem('octomino_zukan_timestamps');
             localStorage.removeItem('octomino_zukan_viewed');
+            localStorage.removeItem('octomino_zukan_counts');
+            localStorage.removeItem('octomino_zukan_stats_materials');
+            localStorage.removeItem('octomino_zukan_stats_total');
+            
             this.closeSettings();
             this.buildUI();
             
@@ -1133,7 +1301,6 @@ class Zukan {
         }
         let ids = currentShapes.map(s => normalizeShape(s));
         
-        // ★修正: カテゴリ判定とソート (パターンA-F)
         ids.sort((a, b) => {
             const getCat = (id) => {
                 const s = getShortSideLength(id);
@@ -1144,7 +1311,6 @@ class Zukan {
                     if(l === 5) return 3;
                     return 4; // l >= 6
                 }
-                // s >= 4
                 if(l === 4) return 5;
                 return 6; // l >= 5
             };
@@ -1168,7 +1334,6 @@ class Zukan {
         const itemW = 160; 
         const itemH = 120; 
 
-        // ★修正: フィルタリングロジック (Pattern A-F)
         const visibleIds = this.allIds.filter(id => {
             const s = getShortSideLength(id);
             const l = getLongSideLength(id);
@@ -1200,12 +1365,19 @@ class Zukan {
             numSpan.textContent = `#${globalIndex + 1}`;
             div.appendChild(numSpan);
             
-            // NEWバッジ
             if (isDiscovered && !this.viewed.has(id)) {
                 const badge = document.createElement('span');
                 badge.className = 'new-badge';
                 badge.textContent = 'NEW';
                 div.appendChild(badge);
+            }
+            
+            if (isDiscovered) {
+                const count = this.counts.get(id) || 1;
+                const countSpan = document.createElement('span');
+                countSpan.className = 'count-badge';
+                countSpan.textContent = `${count}`;
+                div.appendChild(countSpan);
             }
             
             div.onclick = () => {
@@ -1233,7 +1405,6 @@ class Zukan {
     }
 
     showDetail(id) {
-        // 既読処理
         if (!this.viewed.has(id)) {
             this.viewed.add(id);
             this.save();
@@ -1249,8 +1420,8 @@ class Zukan {
         points = adjustOrientationForDisplay(points);
         
         const dpr = window.devicePixelRatio || 1;
-        const cssW = 480; 
-        const cssH = 360;
+        const cssW = 640; 
+        const cssH = 480;
         
         this.detailCanvas.width = cssW * dpr;
         this.detailCanvas.height = cssH * dpr;
@@ -1265,13 +1436,16 @@ class Zukan {
         this.detailNumber.textContent = `No.${index + 1}`;
         
         const dateStr = this.timestamps.get(id) || '---';
-        this.detailDate.textContent = `Latest Crafted: ${dateStr}`;
+        this.detailDate.textContent = `Latest: ${dateStr}`; 
+
+        const count = this.counts.get(id) || 0;
+        this.detailCount.textContent = `Total: ${count}`;
 
         drawZukanPolyomino(ctx, points, cssW, cssH);
         this.detailModal.classList.add('active');
     }
 
-    register(blocks) {
+    register(blocks, consumedTypeIds) {
         if(blocks.length !== 8) return false;
         
         const id = normalizeShape(blocks);
@@ -1286,6 +1460,18 @@ class Zukan {
         
         const now = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
         this.timestamps.set(id, now);
+        
+        const currentCount = this.counts.get(id) || 0;
+        this.counts.set(id, currentCount + 1);
+
+        this.totalReports++;
+        if (consumedTypeIds && consumedTypeIds.length > 0) {
+            consumedTypeIds.forEach(tId => {
+                if (tId >= 0 && tId < this.materialCounts.length) {
+                    this.materialCounts[tId]++;
+                }
+            });
+        }
         
         this.save();
         this.unlockItem(id);
@@ -1302,6 +1488,15 @@ class Zukan {
             div.classList.remove('unknown');
             div.classList.add('discovered');
             
+            let countSpan = div.querySelector('.count-badge');
+            if (!countSpan) {
+                countSpan = document.createElement('span');
+                countSpan.className = 'count-badge';
+                div.appendChild(countSpan);
+            }
+            const count = this.counts.get(id) || 1;
+            countSpan.textContent = `${count}`;
+
             const canvas = div.querySelector('canvas');
             const ctx = canvas.getContext('2d');
             let points = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
@@ -1596,7 +1791,7 @@ class Game {
         this.sound = new SoundSystem(); 
 
         this.tetrominoBag = [];
-        this.smallBlockBag = []; 
+        this.smallPatternBag = []; 
 
         this.monominoStock = 0;
         this.maxMonominoStock = 8;
@@ -1609,15 +1804,11 @@ class Game {
         window.addEventListener('resize', () => this.resize());
         this.initInput();
         
-        // ★修正: 起動時のヘルプ表示制御 (登録数が0なら表示)
-        if (this.zukan.collected.size === 0) {
-            this.initHelp();
-        }
+        this.initHelp();
 
         setInterval(() => this.updateClock(), 1000);
         this.updateClock(); 
 
-        // 設定のスイッチイベント
         document.getElementById('se-toggle').addEventListener('change', (e) => {
             this.sound.toggleMute(!e.target.checked);
         });
@@ -1637,10 +1828,12 @@ class Game {
         };
         const closeFunc = () => modal.classList.remove('active');
 
-        helpBtn.addEventListener('click', open);
-        close.addEventListener('click', closeFunc);
+        helpBtn.onclick = open;
+        close.onclick = closeFunc;
 
-        open();
+        if (this.zukan.collected.size === 0) {
+            open();
+        }
     }
 
     updateClock() {
@@ -1738,7 +1931,7 @@ class Game {
         const gridX = Math.floor(cx / GRID_SIZE);
         const gridY = Math.floor(cy / GRID_SIZE);
 
-        // テトロミノバッグ
+        // --- テトロミノの抽選 (7-Bag) ---
         if (this.tetrominoBag.length === 0) {
             this.tetrominoBag = [4, 5, 6, 7, 8, 9, 10];
             for (let i = this.tetrominoBag.length - 1; i > 0; i--) {
@@ -1748,17 +1941,23 @@ class Game {
         }
         const nextTetrominoId = this.tetrominoBag.pop();
 
-        // ★修正: スモールミノ (1, 2, 3) からランダムに2種（被りなし）
-        const smallCandidates = [1, 2, 3];
-        // シャッフル
-        for (let i = smallCandidates.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [smallCandidates[i], smallCandidates[j]] = [smallCandidates[j], smallCandidates[i]];
+        // --- スモールミノの抽選 (3-Pattern Bag) ---
+        if (this.smallPatternBag.length === 0) {
+            this.smallPatternBag = [
+                [2, 3], // I, L
+                [2, 1], // I, Domino
+                [1, 3]  // Domino, L
+            ];
+            for (let i = this.smallPatternBag.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [this.smallPatternBag[i], this.smallPatternBag[j]] = [this.smallPatternBag[j], this.smallPatternBag[i]];
+            }
         }
-        const small1 = smallCandidates[0];
-        const small2 = smallCandidates[1];
+        const smallPair = this.smallPatternBag.pop();
+        const small1 = smallPair[0];
+        const small2 = smallPair[1];
 
-        // 3個生成
+        // 3個生成 (Small x2 + Tetromino x1)
         const typesToSpawn = [small1, small2, nextTetrominoId];
         typesToSpawn.sort(() => Math.random() - 0.5);
 
@@ -1775,9 +1974,13 @@ class Game {
         }
 
         for (let typeId of typesToSpawn) {
-            const s = SHAPES[typeId];
+            let s = JSON.parse(JSON.stringify(SHAPES[typeId]));
             const c = SHAPE_COLORS[typeId];
             
+            // ★追加: ランダム回転 (0～3回)
+            const rot = Math.floor(Math.random() * 4);
+            s = rotateShapePoints(s, rot);
+
             let placed = false;
             for(let off of offsets) {
                 const tx = (gridX + off.x) * GRID_SIZE; 
@@ -1800,7 +2003,7 @@ class Game {
     }
 
     clearAllPieces() {
-        showCustomConfirm("盤面のブロックを全て削除しますか？\n(図鑑の進捗は消えません)", () => {
+        showCustomConfirm("盤上のミノを全て削除します", () => {
             this.pieces = [];
             this.checkClusters();
         });
@@ -1926,15 +2129,18 @@ class Game {
         if (!targetCluster) return;
 
         const blocks = [];
+        const consumedTypeIds = [];
+
         targetCluster.forEach(p => {
             const gx = Math.round(p.x / GRID_SIZE);
             const gy = Math.round(p.y / GRID_SIZE);
             p.blocks.forEach(([bx, by]) => {
                 blocks.push({x: gx+bx, y: gy+by});
             });
+            consumedTypeIds.push(p.typeId);
         });
 
-        const result = this.zukan.register(blocks);
+        const result = this.zukan.register(blocks, consumedTypeIds);
         const num = result.index + 1;
 
         if (result.index === -1) {
@@ -1957,12 +2163,10 @@ class Game {
         this.checkClusters(); 
     }
 
-    // ★修正: トーストアニメーションのちらつき修正
     showToast(msg, isNew) {
         const toast = document.getElementById('toast');
         if (this.toastTimer) clearTimeout(this.toastTimer);
         
-        // クラスリセットしてアニメーションを再始動させる
         toast.className = '';
         void toast.offsetWidth; // リフロー強制
 
@@ -2008,14 +2212,9 @@ class Game {
             menu.classList.remove('active');
         });
         
-        // ★追加: ハンバーガー内の図鑑ボタン
         document.getElementById('zukan-menu-btn').addEventListener('click', () => {
             this.zukan.openZukan();
             menu.classList.remove('active');
-        });
-
-        document.getElementById('clear-all-btn').addEventListener('click', () => {
-            this.clearAllPieces();
         });
 
         document.getElementById('monomino-btn').addEventListener('click', () => {
