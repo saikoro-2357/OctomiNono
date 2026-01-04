@@ -726,7 +726,7 @@
 
 <div id="help-modal" class="modal-overlay">
     <div class="settings-content" style="width: 600px; max-width: 90%; text-align: left;">
-        <h2 style="text-align: center; margin-bottom: 20px;">業務内容</h2>
+        <h2 style="text-align: center; margin-bottom: 20px;">やること</h2>
         
         <h3 style="border-bottom: 1px solid #546E7A; padding-bottom: 5px; margin-bottom: 10px;">目的</h3>
         <p style="margin-bottom: 20px;">全種類のオクトミノ、およびノノミノを作ってください</p>
@@ -741,7 +741,7 @@
         
         <h3 style="border-bottom: 1px solid #546E7A; padding-bottom: 5px; margin-bottom: 10px;">操作方法</h3>
         <ul style="line-height: 1.8; padding-left: 20px; font-weight: 300;">
-            <li>ダブルクリック：ミノを3つ出現</li>
+            <li>ダブルクリック：ミノを2つ出現</li>
             <li>ドラッグ：ミノの移動</li>
             <li>マウスホイール：ミノの回転</li>
             <li>塊を右クリック：ポリオミノを報告</li>
@@ -761,24 +761,24 @@
         <div id="category-description">All Items</div>
 
         <div class="zukan-tabs">
-            <button class="tab-btn active" data-tab="all">All</button>
-            <button class="tab-btn" data-tab="cat8a">8A</button> 
-            <button class="tab-btn" data-tab="cat8b">8B</button> 
-            <button class="tab-btn" data-tab="cat8c">8C</button> 
-            <button class="tab-btn" data-tab="cat8d">8D</button> 
-            <button class="tab-btn" data-tab="cat8e">8E</button> 
-            <button class="tab-btn" data-tab="cat8f">8F</button> 
-            <button class="tab-btn" data-tab="cat9a">9A</button>
-            <button class="tab-btn" data-tab="cat9b">9B</button>
-            <button class="tab-btn" data-tab="cat9c">9C</button>
-            <button class="tab-btn" data-tab="cat9d">9D</button>
-            <button class="tab-btn" data-tab="cat9e">9E</button>
-            <button class="tab-btn" data-tab="cat9f">9F</button>
-            <button class="tab-btn" data-tab="cat9g">9G</button>
-            <button class="tab-btn" data-tab="cat9h">9H</button>
-            <button class="tab-btn" data-tab="cat9i">9I</button>
-            <button class="tab-btn" data-tab="cat9j">9J</button>
-            <button class="tab-btn" data-tab="cat9k">9K</button>
+            <button class="tab-btn active" data-tab="all">全</button>
+            <button class="tab-btn" data-tab="cat8a">8-A</button> 
+            <button class="tab-btn" data-tab="cat8b">8-B</button> 
+            <button class="tab-btn" data-tab="cat8c">8-C</button> 
+            <button class="tab-btn" data-tab="cat8d">8-D</button> 
+            <button class="tab-btn" data-tab="cat8e">8-E</button> 
+            <button class="tab-btn" data-tab="cat8f">8-F</button> 
+            <button class="tab-btn" data-tab="cat9a">9-A</button>
+            <button class="tab-btn" data-tab="cat9b">9-B</button>
+            <button class="tab-btn" data-tab="cat9c">9-C</button>
+            <button class="tab-btn" data-tab="cat9d">9-D</button>
+            <button class="tab-btn" data-tab="cat9e">9-E</button>
+            <button class="tab-btn" data-tab="cat9f">9-F</button>
+            <button class="tab-btn" data-tab="cat9g">9-G</button>
+            <button class="tab-btn" data-tab="cat9h">9-H</button>
+            <button class="tab-btn" data-tab="cat9i">9-I</button>
+            <button class="tab-btn" data-tab="cat9j">9-J</button>
+            <button class="tab-btn" data-tab="cat9k">9-K</button>
         </div>
 
         <div class="zukan-scroll-area">
@@ -1005,19 +1005,6 @@ const normalizeShape = (points) => {
     return variants[0];
 };
 
-const has2x2Block = (id) => {
-    const points = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
-    const has = (x, y) => points.some(p => p.x === x && p.y === y);
-    
-    for (let p of points) {
-        // 自分を左上として、右、下、右下があるか確認
-        if (has(p.x+1, p.y) && has(p.x, p.y+1) && has(p.x+1, p.y+1)) {
-            return true;
-        }
-    }
-    return false;
-};
-
 const adjustOrientationForDisplay = (points) => {
     let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
     points.forEach(p => {
@@ -1037,30 +1024,6 @@ const adjustOrientationForDisplay = (points) => {
         if(p.y<rMinY)rMinY=p.y;
     });
     return rotated.map(p => ({x: p.x - rMinX, y: p.y - rMinY}));
-};
-
-const getShortSideLength = (id) => {
-    const points = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
-    let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
-    points.forEach(p => {
-        if(p.x<minX)minX=p.x; if(p.x>maxX)maxX=p.x;
-        if(p.y<minY)minY=p.y; if(p.y>maxY)maxY=p.y;
-    });
-    const w = maxX - minX + 1;
-    const h = maxY - minY + 1;
-    return Math.min(w, h);
-};
-
-const getLongSideLength = (id) => {
-    const points = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
-    let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
-    points.forEach(p => {
-        if(p.x<minX)minX=p.x; if(p.x>maxX)maxX=p.x;
-        if(p.y<minY)minY=p.y; if(p.y>maxY)maxY=p.y;
-    });
-    const w = maxX - minX + 1;
-    const h = maxY - minY + 1;
-    return Math.max(w, h);
 };
 
 const rotateShapePoints = (blocks, times) => {
@@ -1178,6 +1141,9 @@ class Zukan {
         this.counts = new Map();
         this.materialCounts = new Array(11).fill(0);
         this.totalReports = 0;
+
+        // 計算結果をキャッシュするMapを追加
+        this.shapeCache = new Map();
 
         this.container = document.getElementById('zukan-list');
         this.countLabel = document.getElementById('zukan-count');
@@ -1408,7 +1374,7 @@ class Zukan {
     }
 
     resetCounts() {
-        showCustomConfirm("作成回数カウントをリセットしますか？\n(発見状況は維持されます)", () => {
+        showCustomConfirm("作成回数カウントをリセットします\n(発見状況は維持されます)", () => {
             this.counts.clear();
             localStorage.setItem('octomino_zukan_counts', '{}');
             this.closeSettings();
@@ -1418,7 +1384,7 @@ class Zukan {
     }
 
     resetStats() {
-        showCustomConfirm("統計データをリセットしますか？\n(素材使用内訳と総報告数)", () => {
+        showCustomConfirm("統計データをリセットします\n(使用ミノ内訳と総報告数)", () => {
             this.materialCounts = new Array(11).fill(0);
             this.totalReports = 0;
             localStorage.removeItem('octomino_zukan_stats_materials');
@@ -1435,11 +1401,88 @@ class Zukan {
         setTimeout(() => { toast.classList.remove('show'); toast.classList.remove('alert'); }, 2000);
     }
 
+    // IDからカテゴリ等の情報を取得し、キャッシュするメソッド
+    getShapeInfo(id) {
+        if (this.shapeCache.has(id)) {
+            return this.shapeCache.get(id);
+        }
+
+        const points = id.split(';').map(s => { 
+            const [x, y] = s.split(','); 
+            return { x: +x, y: +y }; 
+        });
+
+        // 辺の長さ計算
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        points.forEach(p => {
+            if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+        });
+        const w = maxX - minX + 1;
+        const h = maxY - minY + 1;
+        const s = Math.min(w, h);
+        const l = Math.max(w, h);
+        const len = points.length;
+
+        // 2x2の塊判定
+        let has2x2 = false;
+        if (len === 9) {
+            const pSet = new Set(id.split(';'));
+            for (let p of points) {
+                if (pSet.has(`${p.x+1},${p.y}`) && 
+                    pSet.has(`${p.x},${p.y+1}`) && 
+                    pSet.has(`${p.x+1},${p.y+1}`)) {
+                    has2x2 = true;
+                    break;
+                }
+            }
+        }
+
+        // カテゴリ判定
+        let cat = '';
+        if (len === 8) {
+            if (s <= 2) cat = 'cat8a';
+            else if (s === 3) {
+                if (l <= 4) cat = 'cat8b';
+                else if (l === 5) cat = 'cat8c';
+                else cat = 'cat8d';
+            } else { // s >= 4
+                if (l === 4) cat = 'cat8e';
+                else cat = 'cat8f';
+            }
+        } else if (len === 9) {
+            if (s <= 2) cat = 'cat9a';
+            else if (s === 3) {
+                if (l <= 4) cat = 'cat9b';
+                else if (l === 5) cat = 'cat9c';
+                else if (l === 6) {
+                    if (has2x2) cat = 'cat9d';
+                    else cat = 'cat9e';
+                } else {
+                    cat = 'cat9f';
+                }
+            } else if (s === 4) {
+                if (l === 4) cat = 'cat9g';
+                else if (l === 5) {
+                    if (has2x2) cat = 'cat9h';
+                    else cat = 'cat9i';
+                } else {
+                    cat = 'cat9j';
+                }
+            } else {
+                cat = 'cat9k';
+            }
+        }
+
+        const info = { points, s, l, len, has2x2, cat };
+        this.shapeCache.set(id, info);
+        return info;
+    }
+
     generateAllOctominoes() {
         let currentShapes = [ [{x:0,y:0}] ];
         let collectedShapes = [];
 
-        // 2から9までループ
         for(let n=2; n<=9; n++) {
             const nextShapesSet = new Set();
             const nextShapes = [];
@@ -1469,51 +1512,13 @@ class Zukan {
         
         let ids = collectedShapes.map(s => normalizeShape(s));
         
+        // ソート処理の最適化：キャッシュされたカテゴリIDで比較
         ids.sort((a, b) => {
-            const getCat = (id) => {
-                const points = id.split(';');
-                const len = points.length;
-                const s = getShortSideLength(id);
-                const l = getLongSideLength(id);
-
-                if (len === 8) {
-                    if(s <= 2) return 1; // 8A
-                    if(s === 3) {
-                        if(l <= 4) return 2; // 8B
-                        if(l === 5) return 3; // 8C
-                        return 4; // 8D
-                    }
-                    if(l === 4) return 5; // 8E
-                    return 6; // 8F
-                } else {
-                    // len === 9
-                    if (s <= 2) return 10; // 9A
-                    if (s === 3) {
-                        if (l <= 4) return 11; // 9B
-                        if (l === 5) return 12; // 9C
-                        if (l === 6) {
-                            if (has2x2Block(id)) return 13; // 9D
-                            return 14; // 9E
-                        }
-                        return 15; // 9F (l>=7)
-                    }
-                    if (s === 4) {
-                        if (l === 4) return 16; // 9G
-                        if (l === 5) {
-                            if (has2x2Block(id)) return 17; // 9H
-                            return 18; // 9I
-                        }
-                        return 19; // 9J (l>=6)
-                    }
-                    return 20; // 9K (s >= 5)
-                }
-            };
+            const infoA = this.getShapeInfo(a);
+            const infoB = this.getShapeInfo(b);
             
-            const catA = getCat(a);
-            const catB = getCat(b);
-            
-            if (catA !== catB) {
-                return catA - catB; 
+            if (infoA.cat !== infoB.cat) {
+                return infoA.cat < infoB.cat ? -1 : 1;
             }
             return a.localeCompare(b);
         });
@@ -1560,56 +1565,17 @@ class Zukan {
             this.descLabel.style.borderLeftColor = '#546E7A'; 
         }
 
+        // フィルタリングの最適化：キャッシュを利用
         const visibleIds = this.allIds.filter(id => {
-            const points = id.split(';');
-            const length = points.length;
-            
-            let cat = '';
-            const s = getShortSideLength(id);
-            const l = getLongSideLength(id);
-
-            if (length === 8) {
-                if(s <= 2) cat = 'cat8a';
-                else if(s === 3) {
-                    if(l <= 4) cat = 'cat8b';
-                    else if(l === 5) cat = 'cat8c';
-                    else cat = 'cat8d';
-                }
-                else { 
-                    if(l === 4) cat = 'cat8e';
-                    else cat = 'cat8f';
-                }
-            } else if (length === 9) {
-                if (s <= 2) cat = 'cat9a';
-                else if (s === 3) {
-                    if (l <= 4) cat = 'cat9b';
-                    else if (l === 5) cat = 'cat9c';
-                    else if (l === 6) {
-                        if (has2x2Block(id)) cat = 'cat9d';
-                        else cat = 'cat9e';
-                    } else {
-                        cat = 'cat9f';
-                    }
-                }
-                else if (s === 4) {
-                    if (l === 4) cat = 'cat9g'; 
-                    else if (l === 5) {
-                        if (has2x2Block(id)) cat = 'cat9h';
-                        else cat = 'cat9i';
-                    } else {
-                        cat = 'cat9j'; 
-                    }
-                } else {
-                    cat = 'cat9k';
-                }
-            }
-
             if (this.currentTab === 'all') return true;
-            return this.currentTab === cat;
+            const info = this.getShapeInfo(id);
+            return info.cat === this.currentTab;
         });
 
         visibleIds.forEach(id => {
             const globalIndex = this.allIds.indexOf(id); 
+            const info = this.getShapeInfo(id);
+
             const div = document.createElement('div');
             const isDiscovered = this.collected.has(id);
             div.className = isDiscovered ? 'zukan-item discovered' : 'zukan-item unknown';
@@ -1620,13 +1586,10 @@ class Zukan {
             numSpan.textContent = `#${globalIndex + 1}`;
             div.appendChild(numSpan);
             
-            const pointsArr = id.split(';').map(s => { const [x,y]=s.split(','); return {x:+x, y:+y}; });
-            const length = pointsArr.length;
-            
             const countSpan = document.createElement('span');
             countSpan.className = 'block-count';
-            countSpan.textContent = length;
-            countSpan.style.color = (length === 9) ? '#E1BEE7' : '#B3E5FC';
+            countSpan.textContent = info.len;
+            countSpan.style.color = (info.len === 9) ? '#E1BEE7' : '#B3E5FC';
             
             div.appendChild(countSpan);
 
@@ -1664,7 +1627,7 @@ class Zukan {
                 points = adjustOrientationForDisplay(points);
                 ctx.scale(dpr, dpr);
                 
-                const fillColor = length === 9 ? '#E1BEE7' : '#B3E5FC'; 
+                const fillColor = info.len === 9 ? '#E1BEE7' : '#B3E5FC'; 
                 
                 drawZukanPolyomino(ctx, points, itemW, itemH, fillColor);
             }
@@ -2079,7 +2042,7 @@ class Game {
         this.sound = new SoundSystem(); 
 
         this.tetrominoBag = [];
-        this.smallPatternBag = []; 
+        this.smallPieceBag = []; // 小さなミノ用バッグ
 
         this.monominoStock = 0;
         this.maxMonominoStock = 9; // ストック上限を9に変更
@@ -2261,24 +2224,18 @@ class Game {
         }
         const nextTetrominoId = this.tetrominoBag.pop();
 
-        // --- スモールミノの抽選 (3-Pattern Bag) ---
-        if (this.smallPatternBag.length === 0) {
-            this.smallPatternBag = [
-                [2, 3], // I, L
-                [2, 1], // I, Domino
-                [1, 3]  // Domino, L
-            ];
-            for (let i = this.smallPatternBag.length - 1; i > 0; i--) {
+        // --- スモールミノの抽選 (3-Bag: Domino, Tromino I, Tromino L) ---
+        if (this.smallPieceBag.length === 0) {
+            this.smallPieceBag = [1, 2, 3]; // 1:Domino, 2:Tromino-I, 3:Tromino-L
+            for (let i = this.smallPieceBag.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [this.smallPatternBag[i], this.smallPatternBag[j]] = [this.smallPatternBag[j], this.smallPatternBag[i]];
+                [this.smallPieceBag[i], this.smallPieceBag[j]] = [this.smallPieceBag[j], this.smallPieceBag[i]];
             }
         }
-        const smallPair = this.smallPatternBag.pop();
-        const small1 = smallPair[0];
-        const small2 = smallPair[1];
+        const nextSmallId = this.smallPieceBag.pop();
 
-        // 3個生成 (Small x2 + Tetromino x1)
-        const typesToSpawn = [small1, small2, nextTetrominoId];
+        // 2個生成 (Small x1 + Tetromino x1)
+        const typesToSpawn = [nextSmallId, nextTetrominoId];
         typesToSpawn.sort(() => Math.random() - 0.5);
 
         const offsets = [];
