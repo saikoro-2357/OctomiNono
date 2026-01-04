@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Okutomino</title>
+    <title>生成形オクトミノ</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,6 +49,7 @@
             left: 25px;
             width: 50px;
             height: 50px;
+            /* 背景を透明に変更 */
             background: transparent;
             border: none;
             border-radius: 4px;
@@ -62,6 +63,7 @@
             pointer-events: auto;
             transition: background 0.2s;
         }
+        /* ホバー時は少し背景を出す */
         #hamburger-btn:hover { background: rgba(55, 71, 79, 0.5); }
 
         /* サイドメニュー本体 */
@@ -531,7 +533,7 @@
             cursor: pointer;
             font-weight: 300;
             font-family: 'Noto Sans JP', sans-serif;
-            margin-top: 20px;
+            margin-top: 5px;
             width: 100%;
             font-size: 16px;
         }
@@ -744,12 +746,16 @@
             </label>
         </div>
 
-        <p style="color:#b0bec5; font-size:14px; margin-bottom:20px; border-top:1px solid #455A64; padding-top:20px;">
-            図鑑の登録状況と統計を削除します。<br>
-            (盤面のブロックは消えません)
-        </p>
-        <button id="reset-data-btn" class="danger-btn">進捗を削除する</button>
-        <button class="modal-ui-btn" style="background:#546e7a; margin-top:10px; width:100%; display:block; text-align:center;" id="settings-close">閉じる</button>
+        <div style="border-top: 1px solid #455A64; margin-top: 20px; padding-top: 10px;">
+            <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #E57373;">リセット</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <button id="reset-collection-btn" class="danger-btn" style="margin-top:0;">図鑑の発見状況</button>
+                <button id="reset-counts-btn" class="danger-btn" style="margin-top:0;">作成回数</button>
+                <button id="reset-stats-btn" class="danger-btn" style="margin-top:0;">統計データ</button>
+            </div>
+        </div>
+
+        <button class="modal-ui-btn" style="background:#546e7a; margin-top:20px; width:100%; display:block; text-align:center;" id="settings-close">閉じる</button>
     </div>
 </div>
 
@@ -1125,7 +1131,11 @@ class Zukan {
         
         document.getElementById('settings-menu-btn').addEventListener('click', () => this.openSettings());
         document.getElementById('settings-close').addEventListener('click', () => this.closeSettings());
-        document.getElementById('reset-data-btn').addEventListener('click', () => this.resetData());
+        
+        // ★修正: リセットボタンのイベントリスナー分離
+        document.getElementById('reset-collection-btn').addEventListener('click', () => this.resetCollection());
+        document.getElementById('reset-counts-btn').addEventListener('click', () => this.resetCounts());
+        document.getElementById('reset-stats-btn').addEventListener('click', () => this.resetStats());
 
         document.getElementById('stats-menu-btn').addEventListener('click', () => this.openStats());
         document.getElementById('stats-close').addEventListener('click', () => this.closeStats());
@@ -1247,30 +1257,48 @@ class Zukan {
         } catch(e) { console.error(e); }
     }
 
-    resetData() {
-        showCustomConfirm("本当に進捗を削除しますか？\n(この操作は取り消せません)", () => {
+    // ★追加: 個別リセットメソッド
+    resetCollection() {
+        showCustomConfirm("図鑑の発見状況をリセットしますか？\n(作成回数や統計は維持されます)", () => {
             this.collected.clear();
             this.timestamps.clear();
             this.viewed.clear();
-            this.counts.clear();
-            this.materialCounts = new Array(11).fill(0);
-            this.totalReports = 0;
-            
             localStorage.removeItem('octomino_zukan_collection');
             localStorage.removeItem('octomino_zukan_timestamps');
             localStorage.removeItem('octomino_zukan_viewed');
-            localStorage.removeItem('octomino_zukan_counts');
-            localStorage.removeItem('octomino_zukan_stats_materials');
-            localStorage.removeItem('octomino_zukan_stats_total');
-            
             this.closeSettings();
             this.buildUI();
-            
-            const toast = document.getElementById('toast');
-            toast.textContent = "データを削除しました";
-            toast.className = 'show alert';
-            setTimeout(() => { toast.classList.remove('show'); toast.classList.remove('alert'); }, 2000);
+            this.showResetToast();
         });
+    }
+
+    resetCounts() {
+        showCustomConfirm("作成回数カウントをリセットしますか？\n(発見状況は維持されます)", () => {
+            this.counts.clear();
+            // 空のオブジェクトを保存することで、次回ロード時の「移行措置」を回避
+            localStorage.setItem('octomino_zukan_counts', '{}');
+            this.closeSettings();
+            this.buildUI();
+            this.showResetToast();
+        });
+    }
+
+    resetStats() {
+        showCustomConfirm("統計データをリセットしますか？\n(素材使用内訳と総報告数)", () => {
+            this.materialCounts = new Array(11).fill(0);
+            this.totalReports = 0;
+            localStorage.removeItem('octomino_zukan_stats_materials');
+            localStorage.removeItem('octomino_zukan_stats_total');
+            this.closeSettings();
+            this.showResetToast();
+        });
+    }
+
+    showResetToast() {
+        const toast = document.getElementById('toast');
+        toast.textContent = "データをリセットしました";
+        toast.className = 'show alert';
+        setTimeout(() => { toast.classList.remove('show'); toast.classList.remove('alert'); }, 2000);
     }
 
     generateAllOctominoes() {
@@ -1556,7 +1584,6 @@ class Polyomino {
         this.animProgress = 0;
     }
 
-    // ★追加: シリアライズ（保存用データ生成）
     serialize() {
         return {
             blocks: this.blocks,
@@ -1567,7 +1594,6 @@ class Polyomino {
         };
     }
 
-    // ★追加: デシリアライズ（データから復元）
     static deserialize(d) {
         return new Polyomino(d.blocks, d.x, d.y, d.color, d.typeId);
     }
@@ -1827,15 +1853,12 @@ class Game {
             this.sound.toggleMute(!e.target.checked);
         });
 
-        // ★追加: ゲーム状態のロード
         this.loadGame();
 
         requestAnimationFrame((t) => this.loop(t));
     }
 
-    // ★追加: 状態保存
     saveGame() {
-        // 削除アニメーション中のピースは保存対象から除外（リロード時には既に消えた状態にする）
         const validPieces = this.pieces
             .filter(p => p.animState !== 'deleting')
             .map(p => p.serialize());
@@ -1847,7 +1870,6 @@ class Game {
         localStorage.setItem('octomino_game_state', JSON.stringify(data));
     }
 
-    // ★追加: 状態ロード
     loadGame() {
         const json = localStorage.getItem('octomino_game_state');
         if (json) {
@@ -1971,7 +1993,7 @@ class Game {
             }
         }
         this.checkClusters();
-        this.saveGame(); // ★保存
+        this.saveGame(); 
     }
 
     spawnBlockSet(cx, cy) {
@@ -2050,14 +2072,14 @@ class Game {
             }
         }
         this.checkClusters();
-        this.saveGame(); // ★保存
+        this.saveGame(); 
     }
 
     clearAllPieces() {
         showCustomConfirm("盤上のミノを全て削除します", () => {
             this.pieces = [];
             this.checkClusters();
-            this.saveGame(); // ★保存
+            this.saveGame(); 
         });
     }
 
@@ -2216,6 +2238,7 @@ class Game {
         this.saveGame(); // ★保存 (ストック増加、削除状態の記録)
     }
 
+    // ★修正: トーストの表示処理を修正
     showToast(msg, isNew) {
         const toast = document.getElementById('toast');
         if (this.toastTimer) clearTimeout(this.toastTimer);
@@ -2228,7 +2251,10 @@ class Game {
         
         this.toastTimer = setTimeout(() => {
             toast.classList.remove('show');
-            toast.classList.remove('existing');
+            // フェードアウト(0.3s)を待ってからexistingを外すことでちらつきを防止
+            setTimeout(() => {
+                toast.classList.remove('existing');
+            }, 300);
         }, 2000);
     }
 
