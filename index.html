@@ -1130,7 +1130,7 @@ const showCustomConfirm = (message, onOk) => {
     modal.classList.add('active');
 };
 
-// --- 図鑑システム ---
+// --- 図鑑システム (キャッシュ対応版) ---
 class Zukan {
     constructor() {
         this.allIds = []; 
@@ -1187,7 +1187,29 @@ class Zukan {
         
         document.getElementById('detail-close-x').addEventListener('click', () => this.detailModal.classList.remove('active'));
 
-        setTimeout(() => this.generateAllOctominoes(), 100);
+        // ★初期化処理変更：キャッシュがあれば読み込み、なければ生成・保存
+        this.initShapeData();
+    }
+
+    initShapeData() {
+        try {
+            const savedShapes = localStorage.getItem('octomino_master_shape_db');
+            if (savedShapes) {
+                // 保存されたデータがある場合は計算せずに読み込む
+                this.allIds = JSON.parse(savedShapes);
+                // カテゴリ情報などのキャッシュを構築（軽量）
+                this.allIds.forEach(id => this.getShapeInfo(id));
+                this.buildUI();
+                console.log("Loaded shape data from cache.");
+            } else {
+                // データがない場合のみ計算処理を実行
+                console.log("Generating shape data...");
+                setTimeout(() => this.generateAndSaveShapes(), 100);
+            }
+        } catch (e) {
+            console.error("Failed to load shape data", e);
+            setTimeout(() => this.generateAndSaveShapes(), 100);
+        }
     }
 
     openZukan() { 
@@ -1401,7 +1423,6 @@ class Zukan {
         setTimeout(() => { toast.classList.remove('show'); toast.classList.remove('alert'); }, 2000);
     }
 
-    // IDからカテゴリ等の情報を取得し、キャッシュするメソッド
     getShapeInfo(id) {
         if (this.shapeCache.has(id)) {
             return this.shapeCache.get(id);
@@ -1479,7 +1500,8 @@ class Zukan {
         return info;
     }
 
-    generateAllOctominoes() {
+    // ★変更: 名前を変更し、保存機能を追加した生成メソッド
+    generateAndSaveShapes() {
         let currentShapes = [ [{x:0,y:0}] ];
         let collectedShapes = [];
 
@@ -1524,6 +1546,15 @@ class Zukan {
         });
 
         this.allIds = ids;
+        
+        // ★追加: 計算結果をlocalStorageに保存（次回以降のため）
+        try {
+            localStorage.setItem('octomino_master_shape_db', JSON.stringify(ids));
+            console.log("Shape data generated and saved to cache.");
+        } catch(e) {
+            console.error("Failed to save shape cache", e);
+        }
+
         this.buildUI();
     }
 
@@ -1766,6 +1797,7 @@ class Zukan {
     }
 }
 
+// --- Polyomino (オフスクリーンレンダリング対応版) ---
 class Polyomino {
     constructor(blocks, x, y, color, typeId) {
         this.blocks = JSON.parse(JSON.stringify(blocks));
@@ -1793,6 +1825,13 @@ class Polyomino {
         this.opacity = 1; 
         this.animState = 'idle'; 
         this.animProgress = 0;
+        
+        // --- キャッシュシステム初期化 ---
+        this.cacheCanvas = document.createElement('canvas');
+        this.cacheCtx = this.cacheCanvas.getContext('2d');
+        this.cacheOffsetX = 0;
+        this.cacheOffsetY = 0;
+        this.prerender();
     }
 
     serialize() {
@@ -1880,6 +1919,10 @@ class Polyomino {
         this.y = sim.y;
         this.currentRotation = 0;
         this.targetRotation = 0;
+        
+        // 形状が変わったのでキャッシュを再生成
+        this.determinePivotBlock();
+        this.prerender();
     }
 
     update() {
@@ -1921,6 +1964,39 @@ class Polyomino {
 
         return rotationFinished;
     }
+    
+    // --- オフスクリーンレンダリング処理 ---
+    prerender() {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        this.blocks.forEach(([bx, by]) => {
+            minX = Math.min(minX, bx); maxX = Math.max(maxX, bx);
+            minY = Math.min(minY, by); maxY = Math.max(maxY, by);
+        });
+        
+        const padding = 10; 
+        const width = (maxX - minX + 1) * GRID_SIZE + padding * 2;
+        const height = (maxY - minY + 1) * GRID_SIZE + padding * 2;
+
+        this.cacheCanvas.width = width;
+        this.cacheCanvas.height = height;
+        
+        this.cacheOffsetX = -minX * GRID_SIZE + padding;
+        this.cacheOffsetY = -minY * GRID_SIZE + padding;
+        
+        const ctx = this.cacheCtx;
+        ctx.clearRect(0, 0, width, height);
+        
+        ctx.save();
+        ctx.translate(this.cacheOffsetX, this.cacheOffsetY);
+        
+        ctx.fillStyle = this.color;
+        this._renderPath(ctx);
+        ctx.fill();
+
+        this._renderBonesAndDots(ctx);
+        
+        ctx.restore();
+    }
 
     draw(ctx, colorOverride = null) {
         if (this.opacity <= 0 && this.animState !== 'appearing') return;
@@ -1950,27 +2026,30 @@ class Polyomino {
         }
 
         ctx.rotate(this.currentRotation);
+        
         ctx.translate(-cx, -cy);
 
-        ctx.shadowBlur = 0;
-
-        const baseColor = colorOverride || this.color;
-        
-        ctx.fillStyle = baseColor;
-        this.drawRoundedPath(ctx);
-        ctx.fill();
-
-        this.drawBonesAndDots(ctx);
+        if (colorOverride) {
+            ctx.save();
+            ctx.translate(this.x, this.y); 
+            ctx.fillStyle = colorOverride;
+            this._renderPath(ctx);
+            ctx.fill();
+            this._renderBonesAndDots(ctx);
+            ctx.restore();
+        } else {
+            ctx.drawImage(this.cacheCanvas, this.x - this.cacheOffsetX, this.y - this.cacheOffsetY);
+        }
 
         ctx.restore();
     }
-
-    drawRoundedPath(ctx) {
+    
+    _renderPath(ctx) {
         const has = (x, y) => this.has(x, y);
         ctx.beginPath();
         for (let [bx, by] of this.blocks) {
-            const x = this.x + bx * GRID_SIZE;
-            const y = this.y + by * GRID_SIZE;
+            const x = bx * GRID_SIZE; 
+            const y = by * GRID_SIZE;
             const s = GRID_SIZE;
             const r = CORNER_RADIUS;
 
@@ -1993,15 +2072,15 @@ class Polyomino {
         }
     }
 
-    drawBonesAndDots(ctx) {
+    _renderBonesAndDots(ctx) {
         const centerOffset = GRID_SIZE / 2;
         ctx.beginPath();
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)'; 
         ctx.lineWidth = 4;
         ctx.lineCap = 'round';
         for (let [bx, by] of this.blocks) {
-            const cx = this.x + bx * GRID_SIZE + centerOffset;
-            const cy = this.y + by * GRID_SIZE + centerOffset;
+            const cx = bx * GRID_SIZE + centerOffset;
+            const cy = by * GRID_SIZE + centerOffset;
             if (this.has(bx + 1, by)) {
                 ctx.moveTo(cx, cy);
                 ctx.lineTo(cx + GRID_SIZE, cy);
@@ -2014,8 +2093,8 @@ class Polyomino {
         ctx.stroke();
         ctx.fillStyle = '#ffffff'; 
         for (let [bx, by] of this.blocks) {
-            const cx = this.x + bx * GRID_SIZE + centerOffset;
-            const cy = this.y + by * GRID_SIZE + centerOffset;
+            const cx = bx * GRID_SIZE + centerOffset;
+            const cy = by * GRID_SIZE + centerOffset;
             ctx.beginPath();
             ctx.arc(cx, cy, 3, 0, Math.PI * 2);
             ctx.fill();
