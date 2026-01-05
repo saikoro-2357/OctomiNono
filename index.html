@@ -348,6 +348,25 @@
             padding-top: 10px;
         }
 
+        /* 完了したタブのスタイル */
+        .tab-btn.completed {
+            color: #00E676;
+            border-bottom: 2px solid #00E676;
+        }
+        .tab-btn.completed.active {
+            color: #00E676;
+            border-bottom: 1px solid #102027;
+            border-top: 2px solid #00E676;
+        }
+        .tab-btn.completed::after {
+            content: "✔";
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 8px;
+            color: #00E676;
+        }
+
         /* 閉じるボタン (透明化) */
         .modal-close-btn {
             background: transparent;
@@ -1596,6 +1615,32 @@ class Zukan {
             this.descLabel.style.borderLeftColor = '#546E7A'; 
         }
 
+        // --- タブの状態更新 (コンプリート判定) ---
+        this.tabButtons.forEach(btn => {
+            const tabCat = btn.getAttribute('data-tab');
+            
+            // 全アイテムロード前はスキップ
+            if (this.allIds.length === 0) return;
+
+            // カテゴリーごとの完了判定
+            let isCompleted = false;
+            if (tabCat === 'all') {
+                isCompleted = (this.collected.size === this.allIds.length);
+            } else {
+                const catIds = this.allIds.filter(id => this.getShapeInfo(id).cat === tabCat);
+                if (catIds.length > 0) {
+                    const collectedCount = catIds.filter(id => this.collected.has(id)).length;
+                    isCompleted = (collectedCount === catIds.length);
+                }
+            }
+
+            if (isCompleted) {
+                btn.classList.add('completed');
+            } else {
+                btn.classList.remove('completed');
+            }
+        });
+
         // フィルタリングの最適化：キャッシュを利用
         const visibleIds = this.allIds.filter(id => {
             if (this.currentTab === 'all') return true;
@@ -1790,10 +1835,37 @@ class Zukan {
     }
 
     updateCount() {
-        const total = this.allIds.length;
-        if(total === 0) return;
-        const current = this.collected.size;
-        this.countLabel.textContent = `${current} / ${total}`;
+        const totalAll = this.allIds.length;
+        
+        // まだデータ生成前なら何もしない
+        if (totalAll === 0) return;
+
+        let currentCount = 0;
+        let totalCount = 0;
+
+        if (this.currentTab === 'all') {
+            currentCount = this.collected.size;
+            totalCount = totalAll;
+            this.countLabel.textContent = `${currentCount} / ${totalCount}`;
+        } else {
+            // 現在のタブのカテゴリーに属するIDのみを抽出してカウント
+            const categoryIds = this.allIds.filter(id => {
+                const info = this.getShapeInfo(id);
+                return info.cat === this.currentTab;
+            });
+            
+            totalCount = categoryIds.length;
+            currentCount = categoryIds.filter(id => this.collected.has(id)).length;
+            
+            this.countLabel.textContent = `${currentCount} / ${totalCount}`;
+        }
+
+        // コンプリート時は数字を緑色にする演出
+        if (totalCount > 0 && currentCount === totalCount) {
+            this.countLabel.style.color = '#00E676';
+        } else {
+            this.countLabel.style.color = '#b0bec5';
+        }
     }
 }
 
